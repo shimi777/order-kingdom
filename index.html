@@ -139,7 +139,7 @@
                     <div>
                         <span class="text-xs text-slate-400 font-semibold block">נקודות משפחתיות שנצברו:</span>
                         <span id="score-text" class="text-2xl font-black text-rose-500">0</span>
-                        <span class="text-xs text-slate-500 font-bold">/ 150</span>
+                        <span class="text-xs text-slate-500 font-bold">/ 195</span>
                     </div>
                     <div class="text-left">
                         <span id="percentage-text" class="text-3xl font-black text-amber-500">0%</span>
@@ -206,11 +206,6 @@
                             <span class="text-2xl">🏰</span> מפת הארמון המשפחתית - GenAI
                         </h3>
                         <p class="text-[11px] text-slate-400 mt-0.5">לחצו על תמונת חדר כלשהו כדי לצפות במשימות:</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button onclick="regenerateAllImages()" class="text-xs text-amber-700 bg-amber-100/80 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold transition-all">
-                            ♻️ ציור מחדש
-                        </button>
                     </div>
                 </div>
 
@@ -312,7 +307,7 @@
 
         const INITIAL_STATE = {
             currentWeek: "שבוע 1: מנקים באהבה",
-            score: 0, maxScore: 150, selectedCharacter: null, selectedRoomId: 1, selectedReward100: null,
+            score: 0, maxScore: 195, selectedCharacter: null, selectedRoomId: 1, selectedReward100: null,
             personalScores: { "הורים": 0, "בכורה": 0, "ילד": 0, "פעוטה": 0 },
             rooms: [
                 {
@@ -361,6 +356,15 @@
                         { id: 501, title: "מסע הכביסה המלכותי", desc: "איסוף סלי הבגדים מהחדרים והפעלת מכונה במרחב השירות", char: "הורים", points: 15, isFamily: true, completed: false },
                         { id: 502, title: "מסיבת קיפול בגדים משפחתית 🎉", desc: "קיפול ומיון ערימות של בגדים נקיים בחדר הכביסה המשותף", char: "כולם", points: 25, isFamily: true, completed: false },
                         { id: 503, title: "טיפוח יער הפיות (הגינה והספרייה)", desc: "השקיית עציצי הגינה וסדר מדפי הספרים המשותפים", char: "כולם", points: 15, isFamily: true, completed: false }
+                    ]
+                },
+                {
+                    id: 6, name: "🛋️ סלון מרחב הנוחות", subtitle: "מרחב המשפחה המשותף", icon: "🛋️", specialRules: "🛋️ ספה ומקומות ישיבה | 📚 ספרייה ומשחקים",
+                    prompt: "A cozy warm family living room with a plush sofa, colorful throw pillows, wooden bookshelf filled with books and board games, watercolor style.",
+                    tasks: [
+                        { id: 601, title: "סידור כריות וקיפול שמיכות הספה 🛋️", desc: "הצבת הכריות בסדר מלכותי ועיי השמיכות בסל הייעודי", char: "כולם", points: 15, isFamily: true, completed: false },
+                        { id: 602, title: "ארגון ספריית המשחקים המשפחתיים 🎲", desc: "החזרת משחקי הלוח לקופסאותיהם וסדר על המדפים", char: "ילד", points: 15, isFamily: true, completed: false },
+                        { id: 603, title: "ניגוב אבק הספרייה וסידור הספרים 📚", desc: "ניגוב עדין של מדפי הספרייה וסידור הספרים בשורה ישרה", char: "בכורה", points: 15, isFamily: true, completed: false }
                     ]
                 }
             ],
@@ -541,7 +545,7 @@
         const BASE_URL = "https://shimi777.github.io/order-kingdom/";
         const STATIC_ROOM_IMAGES = {
             1: BASE_URL + "room_1.png", 2: BASE_URL + "room_2.png", 3: BASE_URL + "room_3.png",
-            4: BASE_URL + "room_4.png", 5: BASE_URL + "room_5.png"
+            4: BASE_URL + "room_4.png", 5: BASE_URL + "room_5.png", 6: BASE_URL + "room_6.png"
         };
 
         function renderRooms() {
