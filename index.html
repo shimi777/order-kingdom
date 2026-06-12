@@ -536,6 +536,10 @@
             return "👑 נקי ומבריק!";
         }
 
+        const STATIC_ROOM_IMAGES = {
+            1: "room_1.png", 2: "room_2.png", 3: "room_3.png", 4: "room_4.png", 5: "room_5.png"
+        };
+
         function renderRooms() {
             const container = document.getElementById("rooms-map-grid");
             if (!container) return; container.innerHTML = "";
@@ -549,16 +553,12 @@
                 card.onclick = () => { gameState.selectedRoomId = room.id; saveGameState(`מעבר לחדר ${room.name}`); };
                 card.innerHTML = `
                     <div class="room-image-container relative w-full aspect-square rounded-3xl overflow-hidden border-2 ${isActive ? 'border-amber-400 ring-4 ring-amber-200/50' : 'border-slate-200/40 bg-white'}">
-                        <img id="room-img-${room.id}" class="w-full h-full object-cover opacity-40" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" style="background: ${GRADIENT_FALLBACKS[room.id]}">
-                        <div id="room-spinner-${room.id}" class="absolute inset-0 flex items-center justify-center bg-white/60"><div class="w-4 h-4 border-2 border-amber-500 rounded-full animate-spin"></div></div>
+                        <img id="room-img-${room.id}" class="w-full h-full object-cover" src="${STATIC_ROOM_IMAGES[room.id]}" style="background: ${GRADIENT_FALLBACKS[room.id]}" onerror="this.style.opacity='0.3'">
                         <div class="absolute bottom-0 inset-x-0 bg-slate-900/60 text-white py-0.5 px-2 text-[9px] flex justify-between items-center"><span>${pct}%</span><span class="truncate">${getCleanlinessStatus(pct)}</span></div>
                     </div>
                     <div class="mt-1 text-xs font-bold text-slate-800 text-center">${room.icon} ${room.name.split(' ').slice(1).join(' ')}</div>
                 `;
                 container.appendChild(card);
-                const cached = localStorage.getItem(`room_img_cache_v3_${room.id}`);
-                if (cached) { document.getElementById(`room-img-${room.id}`).src = cached; document.getElementById(`room-spinner-${room.id}`).classList.add("hidden"); }
-                else { fetchRoomImage(room.id, room.prompt); }
             });
         }
 
