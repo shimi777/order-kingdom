@@ -140,7 +140,7 @@
                     <div>
                         <span class="text-xs text-slate-400 font-semibold block">נקודות משפחתיות שנצברו:</span>
                         <span id="score-text" class="text-2xl font-black text-rose-500">0</span>
-                        <span class="text-xs text-slate-500 font-bold">/ 245</span>
+                        <span class="text-xs text-slate-500 font-bold">/ <span id="max-score-text">245</span></span>
                     </div>
                     <div class="text-left">
                         <span id="percentage-text" class="text-3xl font-black text-amber-500">0%</span>
@@ -236,7 +236,10 @@
                         <span id="room-completed-count">📌 הושלמו: 0/4 משימות</span>
                         <span id="room-completion-pct" class="font-bold text-emerald-500">0%</span>
                     </div>
-                    <button onclick="markAllRoomTasksCompleted()" class="py-1 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold">🌟 סמן הכל כנקי</button>
+                    <div class="flex items-center gap-2">
+                        <button id="edit-mode-btn" onclick="toggleEditMode()" class="py-1 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-lg font-semibold">✏️ עריכת משימות</button>
+                        <button onclick="markAllRoomTasksCompleted()" class="py-1 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold">🌟 סמן הכל כנקי</button>
+                    </div>
                 </div>
             </div>
 
@@ -307,6 +310,62 @@
                 <button onclick="closeFridayReveal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
             </div>
             <div id="friday-reveal-body" class="space-y-4"></div>
+        </div>
+    </div>
+
+    <div id="task-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h3 id="task-editor-title" class="text-xl font-black text-amber-800">➕ משימה חדשה</h3>
+                <button onclick="closeTaskEditor()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
+            </div>
+            <input type="hidden" id="task-edit-id">
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">כותרת המשימה</label>
+                    <input id="task-edit-title" type="text" placeholder="לדוגמה: ניקוי חלונות 🪟" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">תיאור קצר</label>
+                    <input id="task-edit-desc" type="text" placeholder="מה צריך לעשות בדיוק?" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">אחראי/ת</label>
+                        <select id="task-edit-char" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                            <option value="כולם">🏰 כל המשפחה</option>
+                            <option value="הורים">👑 שימי ונעמי</option>
+                            <option value="בכורה">🛡️ שקד</option>
+                            <option value="ילד">🪄 נווה דוד</option>
+                            <option value="פעוטה">🧚 ארבל</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">ניקוד</label>
+                        <input id="task-edit-points" type="number" min="1" max="100" value="10" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">סוג ניקוד</label>
+                        <select id="task-edit-family" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                            <option value="false">👤 אישי (לינקוד האדם)</option>
+                            <option value="true">🏡 משפחתי (למד האנרגיה)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">תדירות</label>
+                        <select id="task-edit-freq" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                            <option value="weekly">📅 שבועי</option>
+                            <option value="daily">☀️ יומי</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveTaskEditor()" class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 שמירה</button>
+                <button onclick="closeTaskEditor()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">ביטול</button>
+            </div>
         </div>
     </div>
 
@@ -426,10 +485,29 @@
 
         const GRADIENT_FALLBACKS = { 1: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", 2: "linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)", 3: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", 4: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", 5: "linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)", 6: "linear-gradient(135deg, #fef9c3 0%, #fde68a 100%)", 7: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)" };
 
-        // משימות יומיות — כל השאר שבועיות
+        // משימות יומיות (ברירת מחדל היסטורית) — משימות חדשות נושאות שדה freq משלהן
         const DAILY_TASK_IDS = new Set([101, 102, 201, 202, 205, 301, 401, 402, 403, 404, 503]);
         const DAY_MS  = 24 * 60 * 60 * 1000;
         const WEEK_MS = 7 * DAY_MS;
+
+        // תדירות המשימה: מעדיף את שדה freq, ונופל חזרה לרשימה ההיסטורית למשימות ישנות
+        function isDaily(task) {
+            if (task.freq === 'daily')  return true;
+            if (task.freq === 'weekly') return false;
+            return DAILY_TASK_IDS.has(task.id);
+        }
+        // מזהה פנוי למשימה חדשה
+        function nextTaskId() {
+            let max = 0;
+            gameState.rooms.forEach(r => r.tasks.forEach(t => { if (t.id > max) max = t.id; }));
+            return max + 1;
+        }
+        // ניקוד מקסימלי = סכום כל המשימות המשפחתיות (מתעדכן אוטומטית בעריכה)
+        function computeMaxScore() {
+            let sum = 0;
+            gameState.rooms.forEach(r => r.tasks.forEach(t => { if (t.isFamily) sum += (t.points || 0); }));
+            return sum || 1;
+        }
 
         // חדרים אישיים ובעליהם — לבונוס השבועי
         const PERSONAL_ROOMS = { 1: "בכורה", 2: "ילד", 3: "הורים" };
@@ -602,7 +680,7 @@
                 r.tasks.forEach(t => {
                     if (!t.completedAt) t.completedAt = null; // ensure field exists
                     if (t.completed && t.completedAt) {
-                        const limit = DAILY_TASK_IDS.has(t.id) ? DAY_MS : WEEK_MS;
+                        const limit = isDaily(t) ? DAY_MS : WEEK_MS;
                         if (now - t.completedAt > limit) {
                             t.completed = false;
                             t.completedAt = null;
@@ -674,6 +752,7 @@
             });
             gameState.goodDeeds.forEach(deed => familyScore += deed.points);
             gameState.score = familyScore;
+            gameState.maxScore = computeMaxScore();
 
             // הוספת נקודות carry-over שנבחרו בחשיפת שישי
             if (gameState.carryOverBonus) {
@@ -781,7 +860,7 @@
             const now = Date.now();
             let totalW = 0, freshW = 0;
             room.tasks.forEach(t => {
-                const period = DAILY_TASK_IDS.has(t.id) ? DAY_MS : WEEK_MS;
+                const period = isDaily(t) ? DAY_MS : WEEK_MS;
                 let f = 0;
                 if (t.completed) {
                     f = t.completedAt ? Math.max(0, 1 - (now - t.completedAt) / period) : 1;
@@ -840,16 +919,32 @@
             tasksToRender.forEach(task => {
                 const card = document.createElement("div");
                 card.className = `flex items-center justify-between p-3 rounded-2xl border ${task.completed ? 'bg-emerald-50/40 text-slate-400': 'bg-white'}`;
+                const daily = isDaily(task);
+                const editControls = editMode ? `
+                    <div class="flex flex-col gap-1">
+                        <button onclick="openTaskEditor(${task.id})" class="w-7 h-7 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-xs flex items-center justify-center border border-amber-100" title="עריכה">✏️</button>
+                        <button onclick="deleteTask(${task.id})" class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs flex items-center justify-center border border-rose-100" title="מחיקה">🗑️</button>
+                    </div>` : "";
                 card.innerHTML = `
-                    <div class="flex items-center gap-3"><button onclick="toggleTask(${task.id}, event)" class="w-5 h-5 rounded border flex items-center justify-center bg-white ${task.completed ? 'bg-emerald-500 text-white':''}">${task.completed ? '✓':''}</button>
-                    <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title}</h4><p class="text-[10px] text-slate-400">${task.desc}</p></div></div>
-                    <div class="flex flex-col items-end gap-1">
-                        <span class="text-[9px] px-2 py-0.5 rounded font-bold border ${task.isFamily ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}">${task.isFamily ? '🏡 משפחתי' : '👤 אישי'} +${task.points}</span>
-                        <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${DAILY_TASK_IDS.has(task.id) ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}">${DAILY_TASK_IDS.has(task.id) ? '☀️ יומי' : '📅 שבועי'}</span>
+                    <div class="flex items-center gap-3"><button onclick="toggleTask(${task.id}, event)" class="w-5 h-5 shrink-0 rounded border flex items-center justify-center bg-white ${task.completed ? 'bg-emerald-500 text-white':''}">${task.completed ? '✓':''}</button>
+                    <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[9px] text-slate-300 mt-0.5">${CHARACTERS[task.char] ? CHARACTERS[task.char].emoji + ' ' + CHARACTERS[task.char].name : task.char}</p></div></div>
+                    <div class="flex items-center gap-2">
+                        <div class="flex flex-col items-end gap-1">
+                            <span class="text-[9px] px-2 py-0.5 rounded font-bold border ${task.isFamily ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}">${task.isFamily ? '🏡 משפחתי' : '👤 אישי'} +${task.points}</span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${daily ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}">${daily ? '☀️ יומי' : '📅 שבועי'}</span>
+                        </div>
+                        ${editControls}
                     </div>
                 `;
                 listContainer.appendChild(card);
             });
+            if (editMode) {
+                const addBtn = document.createElement("button");
+                addBtn.onclick = () => openTaskEditor(null);
+                addBtn.className = "w-full py-3 rounded-2xl border-2 border-dashed border-amber-300 text-amber-600 text-xs font-bold hover:bg-amber-50 transition-all";
+                addBtn.innerText = "➕ הוסף משימה חדשה לחדר זה";
+                listContainer.appendChild(addBtn);
+            }
             document.getElementById("room-completed-count").innerText = `📌 הושלמו: ${activeRoom.tasks.filter(t => t.completed).length}/${activeRoom.tasks.length} משימות`;
         }
 
@@ -873,6 +968,77 @@
             }
         }
 
+        // ===== עריכת משימות =====
+        let editMode = false;
+
+        function toggleEditMode() {
+            editMode = !editMode;
+            const btn = document.getElementById("edit-mode-btn");
+            if (editMode) {
+                btn.className = "py-1 px-3 bg-amber-500 text-white border border-amber-500 rounded-lg font-semibold";
+                btn.innerText = "✅ סיום עריכה";
+            } else {
+                btn.className = "py-1 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-lg font-semibold";
+                btn.innerText = "✏️ עריכת משימות";
+            }
+            renderTasks();
+        }
+
+        function openTaskEditor(taskId) {
+            let task = null;
+            if (taskId !== null) gameState.rooms.forEach(r => r.tasks.forEach(t => { if (t.id === taskId) task = t; }));
+            document.getElementById("task-editor-title").innerText = task ? "✏️ עריכת משימה" : "➕ משימה חדשה";
+            document.getElementById("task-edit-id").value     = task ? task.id : "";
+            document.getElementById("task-edit-title").value  = task ? task.title : "";
+            document.getElementById("task-edit-desc").value   = task ? task.desc : "";
+            document.getElementById("task-edit-char").value   = task ? task.char : "כולם";
+            document.getElementById("task-edit-points").value = task ? task.points : 10;
+            document.getElementById("task-edit-family").value = task ? String(!!task.isFamily) : "false";
+            document.getElementById("task-edit-freq").value   = task ? (isDaily(task) ? "daily" : "weekly") : "weekly";
+            document.getElementById("task-editor-modal").classList.remove("hidden");
+        }
+
+        function closeTaskEditor() { document.getElementById("task-editor-modal").classList.add("hidden"); }
+
+        function saveTaskEditor() {
+            const idVal  = document.getElementById("task-edit-id").value;
+            const title  = document.getElementById("task-edit-title").value.trim();
+            const desc   = document.getElementById("task-edit-desc").value.trim();
+            const char   = document.getElementById("task-edit-char").value;
+            const points = Math.max(1, parseInt(document.getElementById("task-edit-points").value) || 1);
+            const isFamily = document.getElementById("task-edit-family").value === "true";
+            const freq   = document.getElementById("task-edit-freq").value;
+
+            if (!title) { showToast("⚠️ חסרה כותרת", "יש להזין שם למשימה לפני השמירה."); return; }
+
+            const activeRoom = gameState.rooms.find(r => r.id === gameState.selectedRoomId);
+            if (!activeRoom) return;
+
+            if (idVal) {
+                // עריכת משימה קיימת
+                const t = activeRoom.tasks.find(x => x.id === parseInt(idVal));
+                if (t) { t.title = title; t.desc = desc; t.char = char; t.points = points; t.isFamily = isFamily; t.freq = freq; }
+                showToast("✏️ המשימה עודכנה", `"${title}" נשמרה בהצלחה.`);
+            } else {
+                // משימה חדשה
+                activeRoom.tasks.push({ id: nextTaskId(), title, desc, char, points, isFamily, freq, completed: false, completedAt: null });
+                showToast("➕ משימה נוספה", `"${title}" נוספה לחדר ${activeRoom.name}.`);
+            }
+            closeTaskEditor();
+            saveGameState(`עריכת משימות בחדר ${activeRoom.name}`);
+        }
+
+        function deleteTask(taskId) {
+            const activeRoom = gameState.rooms.find(r => r.id === gameState.selectedRoomId);
+            if (!activeRoom) return;
+            const t = activeRoom.tasks.find(x => x.id === taskId);
+            if (!t) return;
+            if (!confirm(`למחוק את המשימה "${t.title}"?`)) return;
+            activeRoom.tasks = activeRoom.tasks.filter(x => x.id !== taskId);
+            showToast("🗑️ המשימה נמחקה", `"${t.title}" הוסרה מהחדר.`);
+            saveGameState(`מחיקת משימה בחדר ${activeRoom.name}`);
+        }
+
         function renderGoodDeeds() {
             const feed = document.getElementById("deeds-feed"); feed.innerHTML = "";
             if (gameState.goodDeeds.length === 0) { feed.innerHTML = `<p class="text-center text-slate-400 text-[11px]">אין מעשי חסד רשומים.</p>`; return; }
@@ -893,6 +1059,8 @@
             const finalPct = Math.min(Math.round((gameState.score / gameState.maxScore) * 100), 100);
             if (document.getElementById("family-progress-bar")) document.getElementById("family-progress-bar").style.width = `${finalPct}%`;
             document.getElementById("score-text").innerText = gameState.score;
+            const maxEl = document.getElementById("max-score-text");
+            if (maxEl) maxEl.innerText = gameState.maxScore;
             document.getElementById("percentage-text").innerText = `${finalPct}%`;
             if (gameState.selectedReward100) {
                 const found = REWARDS_100.find(r => r.id === gameState.selectedReward100);
