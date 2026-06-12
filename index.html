@@ -140,7 +140,7 @@
                     <div>
                         <span class="text-xs text-slate-400 font-semibold block">נקודות משפחתיות שנצברו:</span>
                         <span id="score-text" class="text-2xl font-black text-rose-500">0</span>
-                        <span class="text-xs text-slate-500 font-bold">/ 195</span>
+                        <span class="text-xs text-slate-500 font-bold">/ 225</span>
                     </div>
                     <div class="text-left">
                         <span id="percentage-text" class="text-3xl font-black text-amber-500">0%</span>
@@ -308,7 +308,7 @@
 
         const INITIAL_STATE = {
             currentWeek: "שבוע 1: מנקים באהבה",
-            score: 0, maxScore: 195, selectedCharacter: null, selectedRoomId: 1, selectedReward100: null,
+            score: 0, maxScore: 225, selectedCharacter: null, selectedRoomId: 1, selectedReward100: null,
             personalScores: { "הורים": 0, "בכורה": 0, "ילד": 0, "פעוטה": 0 },
             rooms: [
                 {
@@ -356,7 +356,9 @@
                     tasks: [
                         { id: 501, title: "מסע הכביסה המלכותי", desc: "איסוף סלי הבגדים מהחדרים והפעלת מכונה במרחב השירות", char: "הורים", points: 15, isFamily: true, completed: false },
                         { id: 502, title: "מסיבת קיפול בגדים משפחתית 🎉", desc: "קיפול ומיון ערימות של בגדים נקיים בחדר הכביסה המשותף", char: "כולם", points: 25, isFamily: true, completed: false },
-                        { id: 503, title: "טיפוח יער הפיות (הגינה והספרייה)", desc: "השקיית עציצי הגינה וסדר מדפי הספרים המשותפים", char: "כולם", points: 15, isFamily: true, completed: false }
+                        { id: 503, title: "טיפוח יער הפיות (הגינה והספרייה)", desc: "השקיית עציצי הגינה וסדר מדפי הספרים המשותפים", char: "כולם", points: 15, isFamily: true, completed: false },
+                        { id: 504, title: "טאטוא ושטיפת המדרגות 🧹 (פעם בשבוע)", desc: "שקד מטאטאת ושוטפת את המדרגות מלמעלה למטה", char: "בכורה", points: 15, isFamily: true, completed: false },
+                        { id: 505, title: "סידור פינת הנעליים 👟 (פעם בשבוע)", desc: "נווה דוד מסדר את כל הנעליים בשורות מסודרות בכניסה", char: "ילד", points: 15, isFamily: true, completed: false }
                     ]
                 },
                 {
@@ -366,6 +368,16 @@
                         { id: 601, title: "סידור כריות וקיפול שמיכות הספה 🛋️", desc: "הצבת הכריות בסדר מלכותי ועיי השמיכות בסל הייעודי", char: "כולם", points: 15, isFamily: true, completed: false },
                         { id: 602, title: "ארגון ספריית המשחקים המשפחתיים 🎲", desc: "החזרת משחקי הלוח לקופסאותיהם וסדר על המדפים", char: "ילד", points: 15, isFamily: true, completed: false },
                         { id: 603, title: "ניגוב אבק הספרייה וסידור הספרים 📚", desc: "ניגוב עדין של מדפי הספרייה וסידור הספרים בשורה ישרה", char: "בכורה", points: 15, isFamily: true, completed: false }
+                    ]
+                },
+                {
+                    id: 7, name: "🚿 חדר האמבטיה", subtitle: "חדר הרחצה המשפחתי", icon: "🚿", specialRules: "🪥 כיור ומראה | 🚿 מקלחת ואסלה",
+                    prompt: "A clean bright family bathroom with bathtub, sink, mirror, fluffy towels, watercolor style pastel blue and white tones.",
+                    tasks: [
+                        { id: 701, title: "ניקוי כיור ומראה ✨", desc: "שפשוף הכיור וניגוב המראה עד שמבריקים", char: "הורים", points: 15, isFamily: false, completed: false },
+                        { id: 702, title: "שטיפת האסלה 🪣", desc: "חיטוי ושטיפה יסודית של האסלה מבפנים ומבחוץ", char: "הורים", points: 15, isFamily: false, completed: false },
+                        { id: 703, title: "שטיפת רצפה ומקלחת 🚿", desc: "שטיפת רצפת האמבטיה ותא המקלחת", char: "הורים", points: 20, isFamily: false, completed: false },
+                        { id: 704, title: "החלפת מגבות ושטיחון 🛁", desc: "איסוף מגבות ישנות לכביסה והנחת מגבות נקיות ושטיחון רענן", char: "הורים", points: 10, isFamily: false, completed: false }
                     ]
                 }
             ],
@@ -555,7 +567,8 @@
         const BASE_URL = "https://shimi777.github.io/order-kingdom/";
         const STATIC_ROOM_IMAGES = {
             1: BASE_URL + "room_1.jpg", 2: BASE_URL + "room_2.jpg", 3: BASE_URL + "room_3.jpg",
-            4: BASE_URL + "room_4.jpg", 5: BASE_URL + "room_5.jpg", 6: BASE_URL + "room_6.jpg"
+            4: BASE_URL + "room_4.jpg", 5: BASE_URL + "room_5.jpg", 6: BASE_URL + "room_6.jpg",
+            7: BASE_URL + "room_7.jpg"
         };
 
         function renderRooms() {
