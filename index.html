@@ -403,7 +403,16 @@
                 document.getElementById("gemini-api-key-input").value = savedKey;
             }
             if (savedState) {
-                try { gameState = JSON.parse(savedState); } catch(e) { resetToInitial(); }
+                try {
+                    gameState = JSON.parse(savedState);
+                    // מיזוג חדרים חדשים שנוספו מאז השמירה האחרונה
+                    const savedRoomIds = new Set(gameState.rooms.map(r => r.id));
+                    INITIAL_STATE.rooms.forEach(room => {
+                        if (!savedRoomIds.has(room.id)) gameState.rooms.push(JSON.parse(JSON.stringify(room)));
+                    });
+                    // עדכון maxScore אם השתנה
+                    gameState.maxScore = INITIAL_STATE.maxScore;
+                } catch(e) { resetToInitial(); }
             } else { resetToInitial(); }
         }
 
