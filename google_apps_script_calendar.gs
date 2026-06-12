@@ -13,23 +13,74 @@
  *
  *   (אם ה-doPost שלכם לא עושה JSON.parse — הוסיפו גם את שורת ה-var data.)
  *
- * שלב 2 — הדביקו את כל שאר הקוד שמתחת לכאן.
- * שלב 3 — Deploy → Manage deployments → עריכה → New version → Deploy.
+ * שלב 2 — אם אין לכם doGet בכלל — הדביקו גם את doGet שבהמשך הקובץ.
+ *         (אם כבר יש לכם doGet, הוסיפו בתחילתו:
+ *            if (e.parameter.action === 'getEvents') return getEventsJsonp(e.parameter);)
+ * שלב 3 — הדביקו את כל שאר הקוד שמתחת לכאן.
+ * שלב 4 — Deploy → Manage deployments → עריכה → New version → Deploy.
+ *         חשוב: "Who has access" = Anyone (כדי שהקריאה מהיומן תעבוד בלי התחברות).
  *         בפעם הראשונה גוגל יבקש הרשאה ליומן — אשרו.
- * שלב 4 — באפליקציה: מסך "לו״ז" → "🔄 סנכרן ליומן גוגל".
- *         האירועים יופיעו ביומן בשם "ממלכת הסדר 📅".
- *         (כדי לראות אותו בנייד: פתחו את היומן בגוגל קלנדר פעם אחת.)
+ * שלב 5 — באפליקציה:
+ *         • דחיפה ליומן: מסך "לו״ז" → "🔄 סנכרן ליומן גוגל".
+ *         • קריאה מהיומן: מסך "לו״ז" → טאב "🌐 יומן גוגל" → שם היומן → רענן.
  *
  * הערות:
- * - כיוון אחד בלבד: אפליקציה → יומן. עריכה ביומן עצמו לא חוזרת לאפליקציה.
- * - כל סנכרון מוחק את מה שהאפליקציה יצרה קודם ובונה מחדש (היומן ייעודי,
- *   אז זה בטוח — אל תוסיפו אירועים אישיים ליומן הזה ידנית).
+ * - דחיפה (אפליקציה→יומן) נכתבת ליומן ייעודי "ממלכת הסדר 📅".
+ * - קריאה (יומן→אפליקציה) קוראת מ*כל* יומן לפי שם שתזינו באפליקציה.
+ * - כל סנכרון-דחיפה מוחק את מה שהאפליקציה יצרה קודם ובונה מחדש (היומן ייעודי,
+ *   אז זה בטוח — אל תוסיפו אירועים אישיים ליומן "ממלכת הסדר 📅" ידנית).
  * - אם הטקסט מתחיל בשעה (למשל "16:00") — נוצר אירוע בשעה הזו לשעה.
  *   אחרת — אירוע "כל היום".
  * - לו״ז שבועי נוצר כאירוע *חוזר* כל שבוע. אירוע חודשי = חד-פעמי בתאריך.
  ***********************************************************************/
 
 var KINGDOM_CAL_NAME = 'ממלכת הסדר 📅';
+
+// ====== קריאה מיומן גוגל → אפליקציה (JSONP) ======
+// אם אין לכם doGet אחר — השאירו את הפונקציה הזו כמות שהיא.
+function doGet(e) {
+  if (e && e.parameter && e.parameter.action === 'getEvents') {
+    return getEventsJsonp(e.parameter);
+  }
+  return ContentService.createTextOutput('Kingdom of Order — OK');
+}
+
+function getEventsJsonp(p) {
+  var callback = p.callback || 'callback';
+  try {
+    var calName = (p.cal || '').trim();
+    var cals = calName
+      ? CalendarApp.getCalendarsByName(calName)
+      : [CalendarApp.getDefaultCalendar()];
+    if (!cals.length) {
+      return jsonp(callback, { ok: false, error: 'לא נמצא יומן בשם "' + calName + '"' });
+    }
+    var cal = cals[0];
+    var tz = cal.getTimeZone();
+    var from = p.from ? new Date(p.from) : new Date();
+    var to = p.to ? new Date(p.to) : new Date(Date.now() + 120 * 86400000);
+
+    var events = cal.getEvents(from, to).map(function (ev) {
+      return {
+        title: ev.getTitle(),
+        dateStr: Utilities.formatDate(ev.getStartTime(), tz, 'yyyy-MM-dd'),
+        timeStr: ev.isAllDayEvent() ? '' : Utilities.formatDate(ev.getStartTime(), tz, 'HH:mm'),
+        allDay: ev.isAllDayEvent(),
+        location: ev.getLocation(),
+        desc: ev.getDescription()
+      };
+    });
+    return jsonp(callback, { ok: true, cal: calName || cal.getName(), events: events });
+  } catch (err) {
+    return jsonp(callback, { ok: false, error: String(err) });
+  }
+}
+
+function jsonp(callback, obj) {
+  return ContentService
+    .createTextOutput(callback + '(' + JSON.stringify(obj) + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
 
 function syncCalendar(data) {
   var cals = CalendarApp.getCalendarsByName(KINGDOM_CAL_NAME);

@@ -298,6 +298,7 @@
         <div class="flex justify-center gap-2">
             <button id="subtab-weekly" onclick="switchScheduleSub('weekly')" class="py-1.5 px-4 bg-amber-500 text-white border border-amber-500 rounded-xl text-xs font-bold shadow-sm">📅 שבועי</button>
             <button id="subtab-monthly" onclick="switchScheduleSub('monthly')" class="py-1.5 px-4 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🗓️ חודשי</button>
+            <button id="subtab-gcal" onclick="switchScheduleSub('gcal')" class="py-1.5 px-4 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🌐 יומן גוגל</button>
         </div>
 
         <div class="flex flex-col items-center gap-1">
@@ -331,6 +332,19 @@
                 <p class="text-[11px] text-slate-400 mb-3">אירועים חד-פעמיים בתאריך מסוים (ימי הולדת, טיולים, תורים). לחצו על יום כדי להוסיף או לערוך.</p>
                 <div class="grid grid-cols-7 gap-1 mb-1" id="month-daynames"></div>
                 <div class="grid grid-cols-7 gap-1" id="month-grid"></div>
+            </div>
+        </div>
+
+        <div id="sub-gcal" class="hidden">
+            <div class="watercolor-card p-6">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2"><span class="text-2xl">🌐</span> יומן גוגל</h3>
+                <p class="text-[11px] text-slate-400 mb-4">אירועים שנמשכים מיומן גוגל שלכם (קריאה בלבד). הזינו את שם היומן בדיוק כפי שהוא מופיע בהגדרות גוגל קלנדר.</p>
+                <div class="flex gap-2 mb-3">
+                    <input id="gcal-name-input" type="text" placeholder="שם היומן בגוגל (למשל: משפחה)" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                    <button onclick="fetchGcalEvents()" class="py-2 px-4 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-xl text-sm whitespace-nowrap">🔄 רענן</button>
+                </div>
+                <div id="gcal-status" class="text-xs text-slate-400 mb-3"></div>
+                <div id="gcal-events" class="space-y-4"></div>
             </div>
         </div>
 
@@ -971,6 +985,8 @@
             const _now = new Date();
             calMonth = new Date(_now.getFullYear(), _now.getMonth(), 1);
             renderSchedule(); renderMonth();
+            const _gcalName = localStorage.getItem("kingdom_gcal_name");
+            if (_gcalName) document.getElementById("gcal-name-input").value = _gcalName;
             switchView('chores');
             // עדכון אחוזי טריות, דגימה, ובונוס שבועי — כל 5 דקות
             setInterval(() => { sampleRoomHistory(); decayTasks(); calculateAllScores(); renderAll(); }, 5 * 60 * 1000);
@@ -1547,21 +1563,17 @@
 
         function switchScheduleSub(sub) {
             scheduleSub = sub;
-            const w  = document.getElementById("sub-weekly");
-            const m  = document.getElementById("sub-monthly");
-            const tw = document.getElementById("subtab-weekly");
-            const tm = document.getElementById("subtab-monthly");
+            const subs = { weekly: "sub-weekly", monthly: "sub-monthly", gcal: "sub-gcal" };
+            const tabs = { weekly: "subtab-weekly", monthly: "subtab-monthly", gcal: "subtab-gcal" };
             const activeCls = "py-1.5 px-4 bg-amber-500 text-white border border-amber-500 rounded-xl text-xs font-bold shadow-sm";
             const idleCls   = "py-1.5 px-4 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm";
-            if (sub === 'monthly') {
-                w.classList.add("hidden"); m.classList.remove("hidden");
-                tm.className = activeCls; tw.className = idleCls;
-                renderMonth();
-            } else {
-                m.classList.add("hidden"); w.classList.remove("hidden");
-                tw.className = activeCls; tm.className = idleCls;
-                renderSchedule();
-            }
+            Object.keys(subs).forEach(key => {
+                document.getElementById(subs[key]).classList.toggle("hidden", key !== sub);
+                document.getElementById(tabs[key]).className = (key === sub) ? activeCls : idleCls;
+            });
+            if (sub === 'monthly') renderMonth();
+            else if (sub === 'weekly') renderSchedule();
+            else if (sub === 'gcal')  fetchGcalEvents();
         }
 
         // ===== תצוגה שבועית =====
@@ -1770,6 +1782,58 @@
             }).catch(() => {
                 showToast("❌ שגיאה", "הסנכרון ליומן נכשל. בדקו את הקישור.");
             });
+        }
+
+        // ===== קריאה מיומן גוגל → אפליקציה (JSONP, עוקף CORS) =====
+        function fetchGcalEvents() {
+            const status = document.getElementById("gcal-status");
+            const box = document.getElementById("gcal-events");
+            const nameInput = document.getElementById("gcal-name-input");
+            const calName = (nameInput.value || "").trim();
+            if (!GOOGLE_SCRIPT_URL) { status.innerText = "⚠️ חסר קישור Apps Script — הגדירו אותו במסך הראשי."; return; }
+            if (!calName) { status.innerText = "⚠️ הזינו את שם היומן בגוגל ולחצו רענן."; return; }
+            localStorage.setItem("kingdom_gcal_name", calName);
+            status.innerText = "⏳ טוען אירועים מהיומן...";
+            box.innerHTML = "";
+
+            const cbName = "__gcalCb_" + Date.now();
+            const fmt = d => d.toISOString().slice(0, 10);
+            const from = new Date();
+            const to = new Date(Date.now() + 120 * 86400000);
+            let done = false;
+            const script = document.createElement("script");
+            function cleanup() { done = true; try { delete window[cbName]; } catch (e) { window[cbName] = undefined; } if (script.parentNode) script.remove(); }
+            window[cbName] = function (resp) { if (done) return; renderGcalEvents(resp); cleanup(); };
+            script.src = GOOGLE_SCRIPT_URL + "?action=getEvents&cal=" + encodeURIComponent(calName) +
+                "&from=" + fmt(from) + "&to=" + fmt(to) + "&callback=" + cbName;
+            script.onerror = function () { if (!done) { status.innerText = "❌ טעינה נכשלה. ודאו שהסקריפט פורסם מחדש (New version) ושההרשאה ל-Anyone."; cleanup(); } };
+            document.body.appendChild(script);
+            setTimeout(() => { if (!done) { status.innerText = "❌ אין תגובה מהשרת. בדקו את הקישור ואת הפרסום מחדש."; cleanup(); } }, 15000);
+        }
+
+        function renderGcalEvents(resp) {
+            const status = document.getElementById("gcal-status");
+            const box = document.getElementById("gcal-events");
+            if (!resp || !resp.ok) { status.innerText = "❌ שגיאה: " + ((resp && resp.error) || "לא ידועה. בדקו ששם היומן מדויק."); box.innerHTML = ""; return; }
+            const events = resp.events || [];
+            if (!events.length) { status.innerText = `אין אירועים ביומן "${resp.cal}" ב-120 הימים הקרובים.`; box.innerHTML = ""; return; }
+            status.innerText = `נטענו ${events.length} אירועים מיומן "${resp.cal}".`;
+
+            const groups = {};
+            events.forEach(ev => { (groups[ev.dateStr] = groups[ev.dateStr] || []).push(ev); });
+            box.innerHTML = Object.keys(groups).sort().map(dk => {
+                const p = dk.split("-");
+                const header = `${parseInt(p[2])} ב${HEB_MONTHS[parseInt(p[1]) - 1]} ${p[0]}`;
+                const items = groups[dk].map(ev => `
+                    <div class="flex items-start gap-2 bg-white/70 border border-slate-100 rounded-xl px-3 py-2">
+                        <span class="text-xs font-bold text-sky-600 shrink-0 mt-0.5 w-14 text-center">${ev.timeStr || "כל היום"}</span>
+                        <div class="flex-1">
+                            <div class="text-sm font-semibold text-slate-700">${escapeHtml(ev.title || "(ללא כותרת)")}</div>
+                            ${ev.location ? `<div class="text-[10px] text-slate-400">📍 ${escapeHtml(ev.location)}</div>` : ""}
+                        </div>
+                    </div>`).join("");
+                return `<div><div class="text-xs font-extrabold text-slate-500 mb-1.5 border-r-2 border-sky-300 pr-2">${header}</div><div class="space-y-1.5">${items}</div></div>`;
+            }).join("");
         }
 
         function showToast(title, message) {
