@@ -580,8 +580,6 @@
                     if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
                     gameState.weeklyBonusLog[roomId] = currentWeek;
                     gameState.personalScores[char] = (gameState.personalScores[char] || 0) + WEEKLY_BONUS_PTS;
-                    const roomName = gameState.rooms.find(r => r.id === roomId)?.name || `חדר ${roomId}`;
-                    showToast(`🌟 בונוס שבועי ל${char}!`, `ממוצע ${avg}% בשבוע האחרון — +${WEEKLY_BONUS_PTS} נקודות אישיות!`);
                 }
             });
         }
@@ -708,7 +706,6 @@
                         </div>
                     </div>
                     <div class="mt-1 text-xs font-bold text-slate-800 text-center">${room.name.split(' ').slice(1).join(' ')}</div>
-                    ${PERSONAL_ROOMS[room.id] ? (() => { const avg = getWeekAvg(room.id); const currentWeek = Math.floor(Date.now() / WEEK_MS); const bonusEarned = gameState.weeklyBonusLog && gameState.weeklyBonusLog[room.id] === currentWeek; return avg !== null ? `<div class="text-[9px] text-center mt-0.5 ${bonusEarned ? 'text-amber-500 font-bold' : 'text-slate-400'}">${bonusEarned ? '🌟' : '📊'} ממוצע שבועי: ${avg}%${bonusEarned ? ' +בונוס!' : ''}</div>` : ''; })() : ''}
                 `;
                 container.appendChild(card);
             });
