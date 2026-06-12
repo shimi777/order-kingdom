@@ -249,10 +249,11 @@
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
                         <span class="text-xl">📊</span> סנכרון ל-Google Drive CSV
                     </h3>
-                    <p class="text-xs text-slate-400 mb-4">הדביקו כאן את קישור ה-Web App שקיבלתם מגווגל כדי לשמור היסטוריה בתיקיית `KingdomOfOrder` בקובץ CSV:</p>
+                    <p class="text-xs text-slate-400 mb-3">הדביקו כאן את קישור ה-Web App שקיבלתם מגווגל כדי לשמור היסטוריה בתיקיית `KingdomOfOrder` בקובץ CSV:</p>
 
-                    <div class="space-y-3">
+                    <div class="space-y-2">
                         <input id="script-url-input" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white border border-indigo-200 rounded-xl py-2 px-3 text-xs focus:outline-none">
+                        <input id="gemini-api-key-input" type="password" placeholder="🎨 מפתח Gemini API ליצירת תמונות (aistudio.google.com)" class="w-full bg-white border border-amber-200 rounded-xl py-2 px-3 text-xs focus:outline-none">
                         <div class="flex gap-2">
                             <button onclick="saveScriptUrl()" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all">שמור הגדרות</button>
                             <button onclick="syncToGoogleDrive('סנכרון ידני מלוח הבקרה')" class="py-2 px-4 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1">
@@ -379,12 +380,19 @@
         const GRADIENT_FALLBACKS = { 1: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", 2: "linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)", 3: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", 4: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", 5: "linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)" };
         let gameState = {};
 
+        let GEMINI_API_KEY = "";
+
         function loadGameState() {
             const savedState = localStorage.getItem("kingdom_of_order_save_v3");
             const savedUrl = localStorage.getItem("kingdom_of_order_script_url");
+            const savedKey = localStorage.getItem("kingdom_of_order_gemini_key");
             if (savedUrl) {
                 GOOGLE_SCRIPT_URL = savedUrl;
                 document.getElementById("script-url-input").value = savedUrl;
+            }
+            if (savedKey) {
+                GEMINI_API_KEY = savedKey;
+                document.getElementById("gemini-api-key-input").value = savedKey;
             }
             if (savedState) {
                 try { gameState = JSON.parse(savedState); } catch(e) { resetToInitial(); }
@@ -402,10 +410,13 @@
 
         function saveScriptUrl() {
             const url = document.getElementById("script-url-input").value.trim();
+            const key = document.getElementById("gemini-api-key-input").value.trim();
             GOOGLE_SCRIPT_URL = url;
+            GEMINI_API_KEY = key;
             localStorage.setItem("kingdom_of_order_script_url", url);
+            localStorage.setItem("kingdom_of_order_gemini_key", key);
             updateProgressDOM();
-            showToast("🔒 ההגדרות נשמרו", "כתובת ה-API של גוגל דרייב עודכנה בהצלחה!");
+            showToast("🔒 ההגדרות נשמרו", "כתובת ה-API ומפתח Gemini עודכנו בהצלחה!");
         }
 
         function syncToGoogleDrive(actionDescription = "עדכון", isBackground = false) {
@@ -454,11 +465,19 @@
         window.onload = function() { loadGameState(); calculateAllScores(); renderAll(); }
 
         async function fetchRoomImage(roomId, prompt) {
-            const apiKey = "";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-            const payload = { instances: [ { prompt: prompt } ], parameters: { sampleCount: 1 } };
             const imgElement = document.getElementById(`room-img-${roomId}`);
             const spinner = document.getElementById(`room-spinner-${roomId}`);
+
+            if (!GEMINI_API_KEY) {
+                if (spinner) spinner.innerHTML = `<span class="text-[9px] text-center text-amber-700 px-2">חסר מפתח API ⚙️</span>`;
+                return;
+            }
+
+            if (spinner) spinner.innerHTML = `<div class="w-4 h-4 border-2 border-amber-500 rounded-full animate-spin"></div>`;
+            if (spinner) spinner.classList.remove("hidden");
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${GEMINI_API_KEY}`;
+            const payload = { instances: [{ prompt: prompt }], parameters: { sampleCount: 1 } };
 
             try {
                 const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -466,10 +485,19 @@
                 const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
                 if (base64Data && imgElement && spinner) {
                     const imageUrl = `data:image/png;base64,${base64Data}`;
-                    imgElement.src = imageUrl; imgElement.classList.remove("opacity-40"); spinner.classList.add("hidden");
+                    imgElement.src = imageUrl;
+                    imgElement.classList.remove("opacity-40");
+                    spinner.classList.add("hidden");
                     localStorage.setItem(`room_img_cache_v3_${roomId}`, imageUrl);
+                } else {
+                    const errMsg = result.error?.message || "שגיאה לא ידועה";
+                    if (spinner) spinner.innerHTML = `<span class="text-[9px] text-center text-rose-600 px-2">❌ ${errMsg}</span>`;
+                    console.error("Imagen error:", result);
                 }
-            } catch (e) { if (spinner) spinner.classList.add("hidden"); }
+            } catch (e) {
+                if (spinner) spinner.innerHTML = `<span class="text-[9px] text-center text-rose-600 px-2">❌ שגיאת רשת</span>`;
+                console.error("fetchRoomImage error:", e);
+            }
         }
 
         function regenerateAllImages() {
