@@ -4,27 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ממלכת הסדר - משחק משימות משפחתי</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts - Assistant & Playpen Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;600;700;800&family=Playpen+Sans:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         body {
             font-family: 'Assistant', 'Playpen Sans', sans-serif;
             background-color: #fdf8f5;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 10% 20%, rgba(255, 202, 212, 0.4) 0%, transparent 40%),
                 radial-gradient(circle at 90% 80%, rgba(232, 232, 253, 0.45) 0%, transparent 40%),
                 radial-gradient(circle at 50% 50%, rgba(250, 240, 215, 0.5) 0%, transparent 50%);
             background-attachment: fixed;
         }
 
-        /* Watercolor-like paper effect and soft card styles */
         .watercolor-card {
             background: rgba(255, 255, 255, 0.78);
             backdrop-filter: blur(10px);
@@ -56,7 +52,6 @@
             background: rgba(255, 180, 162, 0.8);
         }
 
-        /* Sparkle/Confetti styles */
         .sparkle {
             position: absolute;
             pointer-events: none;
@@ -64,17 +59,10 @@
         }
 
         @keyframes fly {
-            0% {
-                transform: translate(0, 0) scale(1) rotate(0deg);
-                opacity: 1;
-            }
-            100% {
-                transform: translate(var(--x), var(--y)) scale(0) rotate(var(--r));
-                opacity: 0;
-            }
+            0% { transform: translate(0, 0) scale(1) rotate(0deg); opacity: 1; }
+            100% { transform: translate(var(--x), var(--y)) scale(0) rotate(var(--r)); opacity: 0; }
         }
 
-        /* Progress Bar Watery Effect */
         .water-progress {
             background: linear-gradient(90deg, #ffd3b6 0%, #ffaaa5 50%, #f7d6e0 100%);
             position: relative;
@@ -92,7 +80,6 @@
             100% { transform: translateX(100%); }
         }
 
-        /* Image hover glow effect */
         .room-medallion:hover .room-image-container {
             transform: scale(1.03);
             box-shadow: 0 10px 25px -5px rgba(251, 191, 36, 0.35);
@@ -101,7 +88,6 @@
 </head>
 <body class="min-h-screen pb-12 text-slate-700">
 
-    <!-- Top Navigation / Banner -->
     <header class="max-w-7xl mx-auto px-4 pt-6 pb-2">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/60 backdrop-blur-md border border-peach-200/40 rounded-3xl p-6 shadow-sm">
             <div class="flex items-center gap-4 text-center md:text-right">
@@ -113,8 +99,7 @@
                     <p class="text-sm text-rose-500 font-medium mt-1">✨ הארמון של משפחת שקד, נווה דוד, ארבל, שימי ונעמי ✨</p>
                 </div>
             </div>
-            
-            <!-- Quick stats / Date -->
+
             <div class="flex items-center gap-6 bg-amber-50/70 px-6 py-3 rounded-2xl border border-amber-100">
                 <div class="text-center">
                     <span class="block text-xs text-slate-400 font-semibold uppercase">השבוע שלנו</span>
@@ -122,1086 +107,522 @@
                 </div>
                 <div class="h-8 w-px bg-amber-200"></div>
                 <div class="text-center">
-                    <span class="block text-xs text-slate-400 font-semibold uppercase">חברי ממלכה פעילים</span>
-                    <span class="text-amber-900 font-bold">5 קוסמים</span>
+                    <span class="block text-xs text-slate-400 font-semibold uppercase">ענן גוגל דרייב</span>
+                    <span id="sync-status-badge" class="text-xs bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded-full font-bold">לא מחובר</span>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Game Dashboard -->
     <main class="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        <!-- LEFT COLUMN: Progress & Family Profile & Gratitude Box (4 cols) -->
         <section class="lg:col-span-4 flex flex-col gap-6">
-            
-            <!-- 1. The Energy Core (Progress Bar) -->
+
             <div class="watercolor-card p-6 relative overflow-hidden">
                 <div class="absolute -top-10 -right-10 w-24 h-24 bg-pink-100/30 rounded-full blur-xl"></div>
-                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
-                    <span class="text-2xl">🔋</span> מד האנרגיה הממלכתי
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
+                    <span class="text-2xl">🔋</span> מד האנרגיה המשפחתי
                 </h3>
-                
-                <!-- Progress bar container -->
+                <p class="text-[11px] text-slate-400 mb-4">נבנה ממשימות במרחבים המשותפים וממעשי חסד משותפים!</p>
+
                 <div class="relative w-full h-8 bg-slate-100 rounded-full p-1 border border-slate-200/60 mb-6 shadow-inner">
                     <div id="family-progress-bar" class="water-progress h-full rounded-full transition-all duration-1000 ease-out" style="width: 0%;"></div>
-                    <!-- 50% Milestone Gift -->
                     <div class="absolute right-1/2 top-1/2 -translate-y-1/2 translate-x-1/2 flex flex-col items-center">
-                        <div id="gift-milestone" class="w-6 h-6 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center text-xs shadow-md cursor-pointer transition-transform hover:scale-125 z-10">
-                            🎁
-                        </div>
-                        <span class="text-[10px] text-slate-400 font-bold mt-1">50%</span>
+                        <div id="gift-milestone" class="w-6 h-6 rounded-full bg-white border-2 border-amber-400 flex items-center justify-center text-xs shadow-md">🎁</div>
                     </div>
-                    <!-- 100% Milestone Crown -->
                     <div class="absolute left-2 top-1/2 -translate-y-1/2 flex flex-col items-center">
-                        <div id="crown-milestone" class="w-8 h-8 rounded-full bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-sm shadow-md cursor-pointer transition-transform hover:scale-125 z-10">
-                            👑
-                        </div>
+                        <div id="crown-milestone" class="w-8 h-8 rounded-full bg-amber-100 border-2 border-amber-500 flex items-center justify-center text-sm shadow-md">👑</div>
                     </div>
                 </div>
 
-                <!-- Current Score and active rewards -->
-                <div class="flex justify-between items-center bg-white/60 p-3 rounded-xl border border-rose-100">
+                <div class="flex justify-between items-center bg-white/60 p-3 rounded-xl border border-rose-100 mb-3">
                     <div>
-                        <span class="text-xs text-slate-400 font-semibold block">נקודות קסם שנצברו:</span>
+                        <span class="text-xs text-slate-400 font-semibold block">נקודות משפחתיות שנצברו:</span>
                         <span id="score-text" class="text-2xl font-black text-rose-500">0</span>
-                        <span class="text-xs text-slate-500 font-bold">/ 250</span>
+                        <span class="text-xs text-slate-500 font-bold">/ 150</span>
                     </div>
                     <div class="text-left">
                         <span id="percentage-text" class="text-3xl font-black text-amber-500">0%</span>
                     </div>
                 </div>
 
-                <!-- Active Goal Highlight -->
-                <div class="mt-4 p-3 bg-amber-50/50 rounded-xl border border-amber-100/60 text-xs text-amber-800">
-                    <p class="font-bold flex items-center gap-1">
-                        <i class="fa-solid fa-star text-amber-500 animate-spin"></i>
-                        הפרס השבועי המיועד:
-                    </p>
-                    <p id="active-reward-display" class="font-semibold text-slate-600 mt-1">טרם נבחר פרס לשבוע זה! לחצו על "בחירת פרס שבועי" למטה.</p>
+                <div class="p-3 bg-amber-50/50 rounded-xl border border-amber-100/60 text-xs text-amber-800">
+                    <p class="font-bold flex items-center gap-1">🏆 הפרס המשפחתי השבועי:</p>
+                    <p id="active-reward-display" class="font-semibold text-slate-600 mt-1">טרם נבחר פרס לשבוע זה!</p>
                 </div>
             </div>
 
-            <!-- 2. Family Members Profile Filter -->
             <div class="watercolor-card p-6">
-                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4">
-                    <span class="text-2xl">👥</span> גיבורי הארמון
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-2">
+                    <span class="text-2xl">📊</span> לוח הישגים אישי
                 </h3>
-                <p class="text-xs text-slate-400 mb-4">לחצו על גיבור/ה כדי לראות רק את המשימות שלהם במפת הארמון:</p>
-                
-                <div class="grid grid-cols-2 gap-3" id="avatars-container">
-                    <!-- Dynamic rendering of avatars in JS -->
-                </div>
+                <p class="text-xs text-slate-400 mb-4">לחצו על גיבור/ה כדי לראות את המשימות שלהם במפה:</p>
+
+                <div class="space-y-3" id="avatars-container">
+                    </div>
 
                 <button id="clear-filter-btn" class="w-full mt-4 py-2 px-3 bg-slate-100 hover:bg-slate-200/80 text-slate-600 font-bold rounded-xl text-xs transition-colors hidden" onclick="clearFilter()">
                     <i class="fa-solid fa-filter-circle-xmark ml-1"></i> הצג משימות של כולם
                 </button>
             </div>
 
-            <!-- 3. The Gratitude & Good Deeds Box -->
             <div class="watercolor-card p-6 border-pink-200/50 bg-gradient-to-br from-white/80 to-pink-50/30">
                 <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-1">
                     <span class="text-2xl">✨</span> תיבת תודות וחסדים
                 </h3>
-                <p class="text-xs text-slate-400 mb-4">מצאתם מעשה טוב, ויתור או עזרה ספונטנית בבית? רשמו כאן והעניקו נקודות בונוס משפחתיות!</p>
+                <p class="text-xs text-slate-400 mb-4">עזרה ספונטנית בבית מעניקה נקודות משפחתיות בונוס!</p>
 
-                <!-- Deed Logging Form -->
                 <form id="good-deed-form" onsubmit="submitGoodDeed(event)" class="space-y-3">
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">מי עשה את החסד?</label>
-                        <select id="deed-doer" class="w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:ring-2 focus:ring-pink-300 focus:outline-none">
-                            <option value="">בחר/י גיבור...</option>
-                            <option value="הורים">שימי ונעמי (המדריכים)</option>
-                            <option value="בכורה">שקד (אבירת הסדר)</option>
-                            <option value="ילד">נווה דוד (קוסם הארגון)</option>
-                            <option value="פעוטה">ארבל (פיית היער הקטנה)</option>
+                        <select id="deed-doer" class="w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none">
+                            <option value="">מי עשה את החסד?</option>
+                            <option value="הורים">שימי ונעמי</option>
+                            <option value="בכורה">שקד</option>
+                            <option value="ילד">נווה דוד</option>
+                            <option value="פעוטה">ארבל</option>
                         </select>
                     </div>
-
                     <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">סוג המעשה הטוב</label>
-                        <select id="deed-type" onchange="updateDeedDescription()" class="w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:ring-2 focus:ring-pink-300 focus:outline-none">
-                            <option value="עזרה לאח/ות">🤝 עזרה לאח/ות (+10 נקודות קסם)</option>
-                            <option value="כוס מים של אהבה">💖 כוס מים של אהבה להורים (+5 נקודות קסם)</option>
-                            <option value="ציור מעודד">🎨 ציור/פתק מעודד בהפתעה (+5 נקודות קסם)</option>
-                            <option value="ויתור מלכותי">👑 ויתור מלכותי באהבה (+10 נקודות קסם)</option>
-                            <option value="עזרה בעת צרה">🩹 עזרה וניחום אח/ות שקיבל מכה (+10 נקודות קסם)</option>
-                            <option value="צוות משימה משותף">🚀 צוות משימה ספונטני (+15 נקודות קסם)</option>
-                            <option value="אחר">✨ מעשה טוב ספונטני אחר (+8 נקודות קסם)</option>
-                        </select>
+                        <input id="deed-desc" type="text" placeholder="מה קרה? (לדוגמה: ויתור מלכותי באהבה)" class="w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none" required>
                     </div>
-
-                    <div>
-                        <label class="block text-xs font-bold text-slate-500 mb-1">תיאור קצר (מה קרה?)</label>
-                        <input id="deed-desc" type="text" placeholder="לדוגמה: עזרה לארבל לאסוף צעצועים בסבלנות" class="w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:ring-2 focus:ring-pink-300 focus:outline-none" required>
-                    </div>
-
-                    <button type="submit" class="w-full py-2.5 px-4 bg-gradient-to-r from-pink-400 to-rose-400 hover:from-pink-500 hover:to-rose-500 text-white font-bold rounded-xl text-xs shadow-md shadow-pink-200/50 transition-all transform hover:scale-[1.02] flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i> שלח/י קרן אור!
+                    <button type="submit" class="w-full py-2.5 px-4 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> שלח/י נקודות משפחתיות!
                     </button>
                 </form>
 
-                <!-- Deed Feed (Scrollable) -->
                 <div class="mt-5 border-t border-pink-100 pt-4">
-                    <h4 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1">
-                        📜 ספר מעשי החסד האחרונים:
-                    </h4>
-                    <div id="deeds-feed" class="max-h-40 overflow-y-auto custom-scrollbar space-y-2 text-xs">
-                        <!-- Rendered by JS -->
-                    </div>
+                    <div id="deeds-feed" class="max-h-40 overflow-y-auto custom-scrollbar space-y-2 text-xs"></div>
                 </div>
             </div>
 
         </section>
 
-        <!-- RIGHT COLUMN: Rooms Castle Map & Task Checklists (8 cols) -->
         <section class="lg:col-span-8 flex flex-col gap-6">
-            
-            <!-- 1. Castle Map Visualization Grid -->
+
             <div class="watercolor-card p-6 bg-gradient-to-b from-amber-50/40 to-orange-50/20">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-4">
                     <div>
                         <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2">
                             <span class="text-2xl">🏰</span> מפת הארמון המשפחתית - GenAI
                         </h3>
-                        <p class="text-[11px] text-slate-400 mt-0.5">לחצו ישירות על תמונת חדר כלשהו כדי לעבור אליו ולטפח אותו!</p>
+                        <p class="text-[11px] text-slate-400 mt-0.5">לחצו על תמונת חדר כלשהו כדי לצפות במשימות:</p>
                     </div>
-                    <button onclick="regenerateAllImages()" class="text-xs text-amber-700 bg-amber-100/80 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold transition-all flex items-center gap-1 shadow-sm">
-                        <i class="fa-solid fa-wand-magic-sparkles animate-pulse"></i> צייר מחדש ב-GenAI
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="regenerateAllImages()" class="text-xs text-amber-700 bg-amber-100/80 hover:bg-amber-200 px-3 py-1.5 rounded-full font-bold transition-all">
+                            ♻️ ציור מחדש
+                        </button>
+                    </div>
                 </div>
-                
-                <!-- Room Grid Layout (Each Room is a clickable image medallion) -->
+
                 <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4" id="rooms-map-grid">
-                    <!-- Loaded dynamically via JS -->
-                </div>
+                    </div>
             </div>
 
-            <!-- 2. Room Detailed Tasks Board -->
             <div class="watercolor-card p-6 border-amber-200/50" id="tasks-board-container">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-amber-100 pb-4 mb-4">
                     <div class="flex items-center gap-3">
-                        <div id="active-room-icon" class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl border border-amber-100">
-                            🌌
-                        </div>
+                        <div id="active-room-icon" class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-2xl border border-amber-100">🌌</div>
                         <div>
                             <h2 id="active-room-title" class="text-2xl font-bold text-slate-800">מצפה הכוכבים</h2>
-                            <p id="active-room-subtitle" class="text-xs text-slate-400">חדר הבת שקד (בת 10)</p>
+                            <p id="active-room-subtitle" class="text-xs text-slate-400"></p>
                         </div>
                     </div>
                     <div class="flex items-center gap-2 bg-amber-50/60 px-3 py-1.5 rounded-xl border border-amber-100/60 text-xs">
                         <span class="font-bold text-amber-800">בחדר זה יש:</span>
-                        <span id="active-room-rules" class="text-slate-500">🛏️ מיטה מלכותית ו-📚 ספריית חלומות</span>
+                        <span id="active-room-rules" class="text-slate-500"></span>
                     </div>
                 </div>
 
-                <!-- Filters message -->
-                <div id="active-filters-notice" class="hidden mb-3 p-2 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-700 flex justify-between items-center">
-                    <span>
-                        <i class="fa-solid fa-circle-info ml-1 text-rose-500"></i>
-                        מציג כעת רק משימות המשויכות לגיבור/ה שנבחר/ה.
-                    </span>
-                    <button onclick="clearFilter()" class="underline font-bold hover:text-rose-900">הצג את כולם</button>
-                </div>
+                <div id="tasks-list" class="space-y-3"></div>
 
-                <!-- Room Task Grid -->
-                <div id="tasks-list" class="space-y-3">
-                    <!-- Dynamic rendering of Tasks -->
-                </div>
-                
-                <!-- Quick room statistics -->
                 <div class="mt-6 pt-4 border-t border-slate-100 flex flex-wrap justify-between items-center text-xs text-slate-400 gap-4">
                     <div class="flex items-center gap-4">
                         <span id="room-completed-count">📌 הושלמו: 0/4 משימות</span>
                         <span id="room-completion-pct" class="font-bold text-emerald-500">0%</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button onclick="markAllRoomTasksCompleted()" class="py-1 px-3 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 rounded-lg transition-all font-semibold">
-                            🌟 סמן את כל חדר זה כנקי!
-                        </button>
-                    </div>
+                    <button onclick="markAllRoomTasksCompleted()" class="py-1 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold">🌟 סמן הכל כנקי</button>
                 </div>
             </div>
 
-            <!-- 3. Bottom Utility Area: Choose Reward & Share -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
-                <!-- Choose Rewards Section -->
-                <div class="watercolor-card p-6 bg-amber-50/20 border-amber-100">
-                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2">
-                        <span class="text-xl">🎁</span> אוצרות השבוע שלנו
+                <div class="watercolor-card p-6 bg-indigo-50/30 border-indigo-100">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
+                        <span class="text-xl">📊</span> סנכרון ל-Google Drive CSV
                     </h3>
-                    <p class="text-xs text-slate-400 mb-4">בחרו אילו פרסים תרוויחו כשתמלאו את מד האנרגיה!</p>
-                    <div class="flex gap-3">
-                        <button onclick="openRewardModal(50)" class="flex-1 py-3 px-4 bg-white hover:bg-amber-50 border border-amber-200 text-amber-800 font-bold rounded-2xl text-xs shadow-sm transition-all flex flex-col items-center justify-center gap-1">
-                            <span class="text-lg">🌟 חצי הדרך (50%)</span>
-                            <span id="reward-50-selected" class="text-[10px] text-rose-500 font-semibold">לחצו לבחירת פרס</span>
-                        </button>
-                        <button onclick="openRewardModal(100)" class="flex-1 py-3 px-4 bg-white hover:bg-amber-50 border border-amber-200 text-amber-800 font-bold rounded-2xl text-xs shadow-sm transition-all flex flex-col items-center justify-center gap-1">
-                            <span class="text-lg">🏆 יעד שבועי (100%)</span>
-                            <span id="reward-100-selected" class="text-[10px] text-rose-500 font-semibold">לחצו לבחירת פרס</span>
-                        </button>
+                    <p class="text-xs text-slate-400 mb-4">הדביקו כאן את קישור ה-Web App שקיבלתם מגווגל כדי לשמור היסטוריה בתיקיית `KingdomOfOrder` בקובץ CSV:</p>
+
+                    <div class="space-y-3">
+                        <input id="script-url-input" type="text" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white border border-indigo-200 rounded-xl py-2 px-3 text-xs focus:outline-none">
+                        <div class="flex gap-2">
+                            <button onclick="saveScriptUrl()" class="py-2 px-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition-all">שמור הגדרות</button>
+                            <button onclick="syncToGoogleDrive('סנכרון ידני מלוח הבקרה')" class="py-2 px-4 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1">
+                                <i class="fa-solid fa-rotate animate-spin-slow"></i> סנכרן כעת ל-CSV
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Interactive Reset / Share -->
                 <div class="watercolor-card p-6 flex flex-col justify-between">
                     <div>
-                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1">
-                            <span class="text-xl">⚙️</span> לוח פיקוד הממלכה
-                        </h3>
-                        <p class="text-xs text-slate-400">ניתן לאפס את כל המשימות לקראת שבוע חדש או לשמור את ההתקדמות במחשב זה.</p>
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2 mb-1"><span class="text-xl">⚙️</span> בקרת שבוע</h3>
+                        <p class="text-xs text-slate-400">איפוס המשימות לקראת שבוע חדש או בחירת פרסים משפחתיים.</p>
                     </div>
                     <div class="flex gap-3 mt-4">
-                        <button onclick="triggerResetConfirmation()" class="flex-1 py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs transition-all">
-                            ♻️ איפוס שבועי
-                        </button>
-                        <button onclick="saveProgressToCloud()" class="flex-1 py-2.5 px-3 bg-gradient-to-r from-teal-400 to-emerald-500 hover:from-teal-500 hover:to-emerald-600 text-white font-bold rounded-xl text-xs shadow-md shadow-teal-100 transition-all flex items-center justify-center gap-1">
-                            ☁️ שמירה בענן משפחתי
-                        </button>
+                        <button onclick="openRewardModal(100)" class="flex-1 py-2.5 px-3 bg-white hover:bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-xl">🎁 בחר פרס 100%</button>
+                        <button onclick="triggerResetConfirmation()" class="flex-1 py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs">♻️ איפוס שבועי</button>
                     </div>
                 </div>
-
             </div>
 
         </section>
-
     </main>
 
-    <!-- IN-GAME CUSTOM CONFIRMATION MODAL -->
     <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-rose-200 text-center transform scale-95 transition-transform duration-300 relative">
-            <div class="w-16 h-16 bg-rose-50 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border border-rose-100">
-                ♻️
-            </div>
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center relative">
             <h3 class="text-xl font-extrabold text-rose-800 mb-2">איפוס שבועי</h3>
-            <p class="text-xs text-slate-500 leading-relaxed mb-6">האם אתם בטוחים שברצונכם לאפס את המשימות של כל הארמון לקראת שבוע חדש? ספר החסד של המשפחה יתחיל מחדש.</p>
+            <p class="text-xs text-slate-500 mb-6">האם לאפס את המשימות? נקודות אישיות ומשפחתיות יתאפסו והשורה תיכתב ב-CSV בדרייב.</p>
             <div class="flex gap-3">
-                <button onclick="confirmReset()" class="flex-1 py-2.5 px-4 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs shadow-md transition-all">
-                    כן, אופסו שבוע
-                </button>
-                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs transition-all">
-                    ביטול
-                </button>
+                <button onclick="confirmReset()" class="flex-1 py-2.5 px-4 bg-rose-500 text-white font-bold rounded-xl text-xs">כן, אופסו</button>
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs">ביטול</button>
             </div>
         </div>
     </div>
 
-    <!-- REWARD SELECTION MODAL (Hidden by default) -->
     <div id="reward-modal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-amber-200/50 transform scale-95 transition-transform duration-300 relative">
-            <button onclick="closeRewardModal()" class="absolute top-4 left-4 text-slate-400 hover:text-slate-600 text-lg">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
-            <h3 id="modal-reward-title" class="text-2xl font-black text-amber-800 mb-2 flex items-center gap-2">
-                🎁 בחירת פרס הממלכה
-            </h3>
-            <p id="modal-reward-subtitle" class="text-xs text-slate-400 mb-4">כאשר הבית יגיע למד הרצוי, נחגוג כולנו יחד!</p>
-            
-            <div id="modal-rewards-list" class="space-y-3 max-h-96 overflow-y-auto pr-1 custom-scrollbar">
-                <!-- Loaded Dynamically in JS -->
-            </div>
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative">
+            <h3 class="text-xl font-black text-amber-800 mb-4">🏆 יעד משפחתי (100%)</h3>
+            <div id="modal-rewards-list" class="space-y-3"></div>
+            <button onclick="closeRewardModal()" class="mt-4 w-full py-2 bg-slate-100 text-xs font-bold rounded-xl">סגור</button>
         </div>
     </div>
 
-    <!-- NOTIFICATION POPUP (Tailwind Styled Alert) -->
-    <div id="custom-toast" class="fixed bottom-6 left-6 bg-slate-900/90 text-white py-3.5 px-6 rounded-2xl shadow-xl z-50 flex items-center gap-3 border border-slate-700 max-w-md transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
-        <span id="toast-icon" class="text-xl">✨</span>
-        <div class="text-xs">
-            <p id="toast-title" class="font-bold text-white"></p>
-            <p id="toast-message" class="text-slate-300 mt-0.5"></p>
-        </div>
-    </div>
-
-    <!-- JAVASCRIPT LOGIC -->
     <script>
-        // 1. Initial State Definitions
+        // CRITICAL URL PLACEHOLDER - Paste your web app URL inside the string below
+        let GOOGLE_SCRIPT_URL = "";
+
         const INITIAL_STATE = {
             currentWeek: "שבוע 1: מנקים באהבה",
-            score: 0,
-            maxScore: 250, // Point ceiling
-            selectedCharacter: null,
-            selectedRoomId: 1,
-            selectedReward50: null,
-            selectedReward100: null,
-            
-            // Core Game Rooms data conforming to user's layout & library+bed rule
+            score: 0, maxScore: 150, selectedCharacter: null, selectedRoomId: 1, selectedReward100: null,
+            personalScores: { "הורים": 0, "בכורה": 0, "ילד": 0, "פעוטה": 0 },
             rooms: [
                 {
-                    id: 1,
-                    name: "🌌 מצפה הכוכבים",
-                    subtitle: "חדר הבת שקד (בת 10)",
-                    icon: "🌌",
-                    specialRules: "🛏️ מיטה מלכותית | 📚 ספריית חלומות | 👚 ארון אישי",
-                    prompt: "A whimsical fairytale astronomy tower bedroom with stars on the ceiling, a telescope pointing at a starry sky, a cozy bed. Watercolor, soft illustration, warm and nostalgic style, warm pastels, golden tones, soft blues and pinks, peaceful and detailed, 1:1 square format.",
+                    id: 1, name: "🌌 מצפה הכוכבים", subtitle: "חדר הבת שקד (בת 10)", icon: "🌌", specialRules: "🛏️ מיטה מלכותית | 📚 ספריית חלומות",
+                    prompt: "A whimsical fairytale astronomy tower bedroom with stars, watercolor style.",
                     tasks: [
-                        { id: 101, title: "סידור המיטה האישית של שקד", desc: "מתיחת סדינים וסידור כריות נוי בצורה אסתטית בארמון", char: "בכורה", points: 15, completed: false },
-                        { id: 102, title: "ספריית החלומות של שקד", desc: "ארגון ספרי הקריאה וחומרי הלימוד בצורה ישרה ויפה", char: "בכורה", points: 15, completed: false },
-                        { id: 103, title: "מבצר הבגדים של שקד", desc: "מיון בגדים בארון של שקד והחזרת בגדים נקיים למגירות", char: "בכורה", points: 15, completed: false },
-                        { id: 104, title: "שאיבת אבק מהרצפה של שקד", desc: "שמירה על רצפת חדר הכוכבים נקייה בעזרת שואב אבק אלחוטי", char: "בכורה", points: 20, completed: false }
+                        { id: 101, title: "סידור המיטה האישית של שקד", desc: "מתיחת סדינים וסידור כריות נוי בצורה אסתטית בארמון", char: "בכורה", points: 15, isFamily: false, completed: false },
+                        { id: 102, title: "ספריית החלומות של שקד", desc: "ארגון ספרי הקריאה וחומרי הלימוד בצורה ישרה ויפה", char: "בכורה", points: 15, isFamily: false, completed: false },
+                        { id: 103, title: "מבצר הבגדים של שקד", desc: "מיון בגדים בארון של שקד והחזרת בגדים נקיים", char: "בכורה", points: 15, isFamily: false, completed: false },
+                        { id: 104, title: "שאיבת אבק מהרצפה של שקד", desc: "שמירה על רצפת חדר הכוכבים נקייה בעזרת שואב אבק אלחוטי", char: "בכורה", points: 20, isFamily: false, completed: false }
                     ]
                 },
                 {
-                    id: 2,
-                    name: "🧸 מאורת הקסמים המשותפת",
-                    subtitle: "חדר הילדים (נווה דוד בן 7 וארבל בת 1.5)",
-                    icon: "🧸",
-                    specialRules: "🛏️ 2 מיטות | 📚 ספריית צעצועים | 🧺 סל כביסה",
-                    prompt: "A magical cozy playroom with soft toys, a wooden toy chest, fairytale books, two small children's beds. Watercolor, soft illustration, warm and nostalgic style, warm pastels, golden tones, soft blues and pinks, peaceful and detailed, 1:1 square format.",
+                    id: 2, name: "🧸 מאורת הקסמים המשותפת", subtitle: "חדר הילדים (נווה דוד וארבל)", icon: "🧸", specialRules: "🛏️ 2 מיטות | 📚 ספריית צעצועים",
+                    prompt: "A magical cozy playroom with soft toys, children beds, watercolor style.",
                     tasks: [
-                        { id: 201, title: "סידור המיטות המשותף 🤝", desc: "נווה דוד מסדר ומותח סדינים, ארבל המתוקה עוזרת בטפיחות שמחה על הכריות ומסדרת בובות פרווה", char: "אחים", points: 25, completed: false },
-                        { id: 202, title: "ספריית הצעצועים והספרים", desc: "נווה דוד ממיין ומנגב אבק, ארבל אוספת ספר קרטון אחד ומניחה אותו במדף התחתון", char: "אחים", points: 20, completed: false },
-                        { id: 203, title: "ציד כביסה בחדר 🧺", desc: "איסוף בגדים מלוכלכים, ארבל קולעת לסל כביסה בעידוד ובעזרת נווה דוד", char: "אחים", points: 15, completed: false },
-                        { id: 204, title: "פינוי וטאטוא הרצפה", desc: "טאטוא קל של חדר המשחקים ע'י נווה דוד כדי למנוע החלקות של ארבל", char: "ילד", points: 15, completed: false }
+                        { id: 201, title: "סידור המיטות המשותף 🤝", desc: "נווה דוד מסדר סדינים, ארבל עוזרת בטפיחות שמחה על הכריות", char: "ילד", points: 20, isFamily: false, completed: false },
+                        { id: 202, title: "ספריית הצעצועים והספרים של הבנים", desc: "נווה דוד ממיין, ארבל אוספת ספר קרטון אחד למדף התחתון", char: "ילד", points: 15, isFamily: false, completed: false },
+                        { id: 203, title: "ציד כביסה בחדר 🧺", desc: "איסוף בגדים מלוכלכים וזריקה לסל", char: "ילד", points: 15, isFamily: false, completed: false }
                     ]
                 },
                 {
-                    id: 3,
-                    name: "👑 היכל ההורים",
-                    subtitle: "חדר השינה של שימי ונעמי",
-                    icon: "👑",
-                    specialRules: "🛏️ מיטה זוגית | 👔 ארון בגדים מלכותי",
-                    prompt: "An elegant, peaceful parents' bedroom with a large double bed, lovely nightstands, absolute cozy atmosphere, strictly no bookshelves. Watercolor, soft illustration, warm and nostalgic style, warm pastels, golden tones, soft blues and pinks, loving and emotional, 1:1 square format.",
+                    id: 3, name: "👑 היכל ההורים", subtitle: "חדר השינה של שימי ונעמי", icon: "👑", specialRules: "🛏️ מיטה זוגית | 👔 ארון בגדים מלכותי",
+                    prompt: "An elegant, peaceful parents' bedroom, cozy master setup, watercolor nostalgic style.",
                     tasks: [
-                        { id: 301, title: "סידור המיטה הזוגית של ההורים", desc: "מתיחת הכיסוי המלכותי הגדול בחדרם של שימי ונעמי", char: "הורים", points: 15, completed: false },
-                        { id: 302, title: "טיפוח וסידור שידות הלילה", desc: "סידור החפצים האישיים, ניגוב אבק עדין והשארת פתק אוהב", char: "הורים", points: 15, completed: false },
-                        { id: 303, title: "מיון בארון הבגדים המלכותי", desc: "החזרת בגדים מקופלים של שימי ונעמי למקומם בצורה אסתטית", char: "הורים", points: 15, completed: false }
+                        { id: 301, title: "סידור המיטה הזוגית של ההורים", desc: "מתיחת הכיסוי המלכותי הגדול", char: "הורים", points: 15, isFamily: false, completed: false },
+                        { id: 302, title: "טיפוח וסידור שידות הלילה", desc: "ניגוב אבק עדין והשארת פתק אוהב", char: "הורים", points: 15, isFamily: false, completed: false }
                     ]
                 },
                 {
-                    id: 4,
-                    name: "🍽️ היכל האוכל והמטבח",
-                    subtitle: "סלון ומטבח הארמון",
-                    icon: "🍽️",
-                    specialRules: "🪑 שולחן מלכות | 🧼 כיור ומדיח | 🧹 רצפת סלון",
-                    prompt: "A warm family dining room and kitchen with a beautifully set table, glowing soft golden light. Watercolor, soft illustration, warm and nostalgic style, warm pastels, golden tones, soft blues and pinks, family-oriented, 1:1 square format.",
+                    id: 4, name: "🍽️ היכל האוכל והמטבח (משותף)", subtitle: "סלון ומטבח הארמון", icon: "🍽️", specialRules: "🪑 שולחן מלכות | 🧼 כיור ומדיח",
+                    prompt: "A warm family dining room and kitchen, watercolor pastel style.",
                     tasks: [
-                        { id: 401, title: "פינוי וסדר שולחן המלכות", desc: "פינוי השולחן לאחר הארוחה, ארבל הקטנה עוזרת ומביאה כפית פלסטיק עמידה לשיש", char: "כולם", points: 15, completed: false },
-                        { id: 402, title: "טקס הכלים והמדיח", desc: "העברת כלים לכיור ושטיפה/הכנסה בטוחה למדיח", char: "בכורה", points: 20, completed: false },
-                        { id: 403, title: "טיפוח וטאטוא המטבח והסלון", desc: "טאטוא פירורי המטבח (נווה דוד) ושאיבה יסודית (שקד)", char: "אחים", points: 15, completed: false }
+                        { id: 401, title: "פינוי וסדר שולחן המלכות", desc: "פינוי השולחן לאחר הארוחה במרחב המשותף", char: "כולם", points: 15, isFamily: true, completed: false },
+                        { id: 402, title: "טקס הכלים והמדיח", desc: "העברת כלים לכיור ושטיפה/הכנסה למדיח", char: "בכורה", points: 20, isFamily: true, completed: false },
+                        { id: 403, title: "טיפוח וטאטוא המטבח והסלון המשותפים", desc: "טאטוא פירורי המטבח ושאיבה יסודית של הסלון המשפחתי", char: "ילד", points: 15, isFamily: true, completed: false }
                     ]
                 },
                 {
-                    id: 5,
-                    name: "🧺 מרחב השירות והגינה",
-                    subtitle: "חדר כביסה וגינת יער הפיות של שימי ונעמי",
-                    icon: "🧺",
-                    specialRules: "🧼 מכונה ומייבש | 👔 מסיבת קיפול | 🌿 עציצים",
-                    prompt: "A beautiful cozy cottage laundry area and garden with soft clothes hanging on a line, blooming colorful flowers, sunbeams. Watercolor, soft illustration, warm and nostalgic style, warm pastels, golden tones, soft blues and pinks, peaceful, 1:1 square format.",
+                    id: 5, name: "🧺 מרחב השירות והגינה (משותף)", subtitle: "חדר כביסה וגינת יער הפיות", icon: "🧺", specialRules: "🧼 מכונה ומייבש | 👔 מסיבת קיפול",
+                    prompt: "A beautiful cozy cottage laundry area and garden, watercolor format.",
                     tasks: [
-                        { id: 501, title: "מסע הכביסה המלכותי", desc: "איסוף סלי הבגדים מהחדרים, מילוי מכונה והפעלתה ע'י שימי ונעמי", char: "הורים", points: 15, completed: false },
-                        { id: 502, title: "מסיבת קיפול בגדים משותפת 🎉", desc: "שקד, שימי ונעמי מקפלים, נווה דוד ממיין ערימות לפי גיבורים, וארבל מתאימה גרביים צבעוניות", char: "כולם", points: 25, completed: false },
-                        { id: 503, title: "טיפוח יער הפיות (הגינה)", desc: "השקיית עציצי הגינה עם מזלף מיוחד, וסיוע של ארבל הקטנה", char: "כולם", points: 15, completed: false }
+                        { id: 501, title: "מסע הכביסה המלכותי", desc: "איסוף סלי הבגדים מהחדרים והפעלת מכונה במרחב השירות", char: "הורים", points: 15, isFamily: true, completed: false },
+                        { id: 502, title: "מסיבת קיפול בגדים משפחתית 🎉", desc: "קיפול ומיון ערימות של בגדים נקיים בחדר הכביסה המשותף", char: "כולם", points: 25, isFamily: true, completed: false },
+                        { id: 503, title: "טיפוח יער הפיות (הגינה והספרייה)", desc: "השקיית עציצי הגינה וסדר מדפי הספרים המשותפים", char: "כולם", points: 15, isFamily: true, completed: false }
                     ]
                 }
             ],
-            
-            // Logged good deeds
-            goodDeeds: [
-                { id: 1, doer: "בכורה", type: "עזרה לאח/ות", desc: "שקד הקריאה סיפור לארבל בחדר המשותף בסבלנות רבה", date: "לפני שעה", points: 10 },
-                { id: 2, doer: "ילד", type: "כוס מים של אהבה", desc: "נווה דוד הביא לנעמי כוס מים קרים מיד כשחזרה הביתה", date: "היום", points: 5 }
-            ]
+            goodDeeds: []
         };
 
-        const REWARDS_50 = [
-            { id: "pillow-castle", title: "🏰 ממלכת הכריות והשמיכות", desc: "מקימים בסלון מבצר שמיכות ענקי עם כריות ואורות מנצנצים וחוקרים אותו יחד." },
-            { id: "dance-party", title: "🎵 מסיבת הריקודים החשמלית", desc: "חושך בסלון, מוזיקה אהובה של כולם, אורות ופנסים לריקוד של 15 דק'." },
-            { id: "baking", title: "🧁 קוסמי המטבח", desc: "אפיית עוגיות שוקולד צ'יפס משפחתית וקישוט מתוק." }
-        ];
-
         const REWARDS_100 = [
-            { id: "cinema", title: "🎬 קולנוע ביתי מלכותי", desc: "הסלון הופך לאולם קולנוע עם כרטיסים מעוצבים, פופקורן ביתי וסרט אהוב." },
-            { id: "picnic", title: "🧺 פיקניק הפיות בגינה / בפארק", desc: "שמיכה גדולה, מאכלים טעימים ומשחקי חוץ מול השמש החמימה." },
-            { id: "icecream", title: "🍦 שיירת הגלידה המתוקה", desc: "נסיעה מיוחדת עם פיג'מות בערב שבת לגלידריה האהובה על כולם!" },
-            { id: "board-games", title: "🎲 שבת משחקי לוח ופיג'מות", desc: "יום שלם בפיג'מות עם בניית מסלולי מכשולים ומשחקי קופסה יחד." }
+            { id: "cinema", title: "🎬 קולנוע ביתי מלכותי", desc: "הסלון הופך לאולם קולנוע עם פופקורן ביתי וסרט אהוב על כולם." },
+            { id: "icecream", title: "🍦 שיירת הגלידה המתוקה", desc: "נסיעה מיוחדת עם פיג'מות בערב שבת לגלידריה האהובה!" }
         ];
 
         const CHARACTERS = {
-            "הורים": { name: "שימי ונעמי", role: "המדריכים הגדולים 👑", emoji: "👑", color: "from-amber-100 to-amber-200", text: "text-amber-800" },
+            "הורים": { name: "שימי ונעמי", role: "מדריכי הארמון 👑", emoji: "👑", color: "from-amber-100 to-amber-200", text: "text-amber-800" },
             "בכורה": { name: "שקד (בת 10)", role: "אבירת הסדר 🛡️", emoji: "🛡️", color: "from-sky-100 to-sky-200", text: "text-sky-800" },
             "ילד": { name: "נווה דוד (בן 7)", role: "קוסם הארגון 🪄", emoji: "🪄", color: "from-purple-100 to-purple-200", text: "text-purple-800" },
-            "פעוטה": { name: "ארבל (בת 1.5)", role: "פיית היער הקטנה 🧚", emoji: "🧚", color: "from-pink-100 to-pink-200", text: "text-pink-800" },
-            "אחים": { name: "נווה דוד וארבל 🤝", role: "ברית האחים", color: "from-emerald-100 to-emerald-200", text: "text-emerald-800", emoji: "🌟" },
+            "פעוטה": { name: "ארבל (בת 1.5)", role: "פיית החסד 🧚", emoji: "🧚", color: "from-pink-100 to-pink-200", text: "text-pink-800" },
             "כולם": { name: "כל המשפחה 🎉", role: "כוח משותף", color: "from-rose-100 to-rose-200", text: "text-rose-800", emoji: "🏰" }
         };
 
-        // Static fallback pastel watercolor gradients in case of API limits or offline mode
-        const GRADIENT_FALLBACKS = {
-            1: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", // Light astronomy sky
-            2: "linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)", // Soft lilac playroom
-            3: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", // Golden sunset glow
-            4: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", // Cozy kitchen green
-            5: "linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)"  // Fresh garden teal
-        };
-
+        const GRADIENT_FALLBACKS = { 1: "linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)", 2: "linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)", 3: "linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%)", 4: "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)", 5: "linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)" };
         let gameState = {};
 
-        // 2. Local Storage Sync
         function loadGameState() {
-            const savedState = localStorage.getItem("kingdom_of_order_save");
-            if (savedState) {
-                try {
-                    gameState = JSON.parse(savedState);
-                } catch(e) {
-                    gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
-                }
-            } else {
-                gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
+            const savedState = localStorage.getItem("kingdom_of_order_save_v3");
+            const savedUrl = localStorage.getItem("kingdom_of_order_script_url");
+            if (savedUrl) {
+                GOOGLE_SCRIPT_URL = savedUrl;
+                document.getElementById("script-url-input").value = savedUrl;
             }
+            if (savedState) {
+                try { gameState = JSON.parse(savedState); } catch(e) { resetToInitial(); }
+            } else { resetToInitial(); }
         }
 
-        function saveGameState() {
-            localStorage.setItem("kingdom_of_order_save", JSON.stringify(gameState));
-            calculateScore();
+        function resetToInitial() { gameState = JSON.parse(JSON.stringify(INITIAL_STATE)); }
+
+        function saveGameState(actionName = "עדכון כללי") {
+            localStorage.setItem("kingdom_of_order_save_v3", JSON.stringify(gameState));
+            calculateAllScores();
             renderAll();
+            syncToGoogleDrive(actionName, true);
         }
 
-        // 3. Dynamic Score & Progress Calculation
-        function calculateScore() {
-            let tempScore = 0;
-            
-            // Count completed tasks points
+        function saveScriptUrl() {
+            const url = document.getElementById("script-url-input").value.trim();
+            GOOGLE_SCRIPT_URL = url;
+            localStorage.setItem("kingdom_of_order_script_url", url);
+            updateProgressDOM();
+            showToast("🔒 ההגדרות נשמרו", "כתובת ה-API של גוגל דרייב עודכנה בהצלחה!");
+        }
+
+        function syncToGoogleDrive(actionDescription = "עדכון", isBackground = false) {
+            if (!GOOGLE_SCRIPT_URL) {
+                if (!isBackground) showToast("⚠️ חסר קישור", "אנא הגדירו את קישור ה-Web App של גוגל תחילה.");
+                return;
+            }
+
+            const payload = {
+                familyScore: gameState.score,
+                personalScores: gameState.personalScores,
+                lastAction: actionDescription
+            };
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors",
+                cache: "no-cache",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            }).then(() => {
+                if (!isBackground) showToast("☁️ סנכרן בהצלחה", "שורה חדשה נכתבה בקובץ ה-CSV בגוגל דרייב!");
+                document.getElementById("sync-status-badge").className = "text-xs bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold";
+                document.getElementById("sync-status-badge").innerText = "מחובר ומסונכרן";
+            }).catch(() => {
+                if (!isBackground) showToast("❌ שגיאת תקשורת", "הסנכרון נכשל. בידקו את הקישור שהזנתם.");
+            });
+        }
+
+        function calculateAllScores() {
+            Object.keys(gameState.personalScores).forEach(k => gameState.personalScores[k] = 0);
+            let familyScore = 0;
+
             gameState.rooms.forEach(room => {
                 room.tasks.forEach(task => {
                     if (task.completed) {
-                        tempScore += task.points;
+                        if (task.isFamily) familyScore += task.points;
+                        else if (gameState.personalScores[task.char] !== undefined) gameState.personalScores[task.char] += task.points;
                     }
                 });
             });
-
-            // Count logged good deeds points
-            gameState.goodDeeds.forEach(deed => {
-                tempScore += deed.points;
-            });
-
-            gameState.score = tempScore;
+            gameState.goodDeeds.forEach(deed => familyScore += deed.points);
+            gameState.score = familyScore;
         }
 
-        // 4. Initialization and Render Loop
-        window.onload = function() {
-            loadGameState();
-            calculateScore();
-            renderAll();
-        }
+        window.onload = function() { loadGameState(); calculateAllScores(); renderAll(); }
 
-        // Generate dynamic GenAI room illustration using the environment provided key (exponential backoff)
         async function fetchRoomImage(roomId, prompt) {
             const apiKey = "";
             const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
-            const payload = {
-                instances: [ { prompt: prompt } ],
-                parameters: { sampleCount: 1 }
-            };
-
+            const payload = { instances: [ { prompt: prompt } ], parameters: { sampleCount: 1 } };
             const imgElement = document.getElementById(`room-img-${roomId}`);
             const spinner = document.getElementById(`room-spinner-${roomId}`);
 
-            let delay = 1000;
-            // Retry up to 5 times with exponential backoff (no console logging)
-            for (let attempt = 1; attempt <= 5; attempt++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    
-                    if (!response.ok) throw new Error("API Limit");
-                    
-                    const result = await response.json();
-                    const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
-                    if (base64Data) {
-                        const imageUrl = `data:image/png;base64,${base64Data}`;
-                        if (imgElement) {
-                            imgElement.src = imageUrl;
-                            imgElement.classList.remove("opacity-40");
-                            imgElement.classList.add("opacity-100");
-                        }
-                        if (spinner) spinner.classList.add("hidden");
-                        // Save image to persistent cache to optimize network
-                        localStorage.setItem(`room_img_cache_${roomId}`, imageUrl);
-                        return;
-                    }
-                } catch (error) {
-                    if (attempt === 5) {
-                        // Safe elegant fallback styling
-                        if (spinner) spinner.classList.add("hidden");
-                        if (imgElement) {
-                            imgElement.classList.remove("opacity-40");
-                            imgElement.classList.add("opacity-100");
-                            imgElement.style.background = GRADIENT_FALLBACKS[roomId];
-                        }
-                    } else {
-                        await new Promise(resolve => setTimeout(resolve, delay));
-                        delay *= 2;
-                    }
+            try {
+                const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                const result = await response.json();
+                const base64Data = result.predictions?.[0]?.bytesBase64Encoded;
+                if (base64Data && imgElement && spinner) {
+                    const imageUrl = `data:image/png;base64,${base64Data}`;
+                    imgElement.src = imageUrl; imgElement.classList.remove("opacity-40"); spinner.classList.add("hidden");
+                    localStorage.setItem(`room_img_cache_v3_${roomId}`, imageUrl);
                 }
-            }
+            } catch (e) { if (spinner) spinner.classList.add("hidden"); }
         }
 
         function regenerateAllImages() {
-            gameState.rooms.forEach(room => {
-                localStorage.removeItem(`room_img_cache_${room.id}`);
-            });
-            showToast("🔮 קסם חדש בארמון!", "מנקים את זיכרון המפה ומציירים את כל החדרים מחדש ב-GenAI!");
+            gameState.rooms.forEach(room => localStorage.removeItem(`room_img_cache_v3_${room.id}`));
             renderRooms();
         }
 
-        function renderAll() {
-            renderAvatars();
-            renderRooms();
-            renderTasks();
-            renderGoodDeeds();
-            updateProgressDOM();
-        }
+        function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderGoodDeeds(); updateProgressDOM(); }
 
-        // Render Character Profile Filter
-        function renderAvatars() {
+        function renderHeroDashboards() {
             const container = document.getElementById("avatars-container");
             container.innerHTML = "";
-
-            const displayableChars = ["הורים", "בכורה", "ילד", "פעוטה"];
-            displayableChars.forEach(key => {
+            ["הורים", "בכורה", "ילד", "פעוטה"].forEach(key => {
                 const c = CHARACTERS[key];
                 const isSelected = gameState.selectedCharacter === key;
                 const card = document.createElement("div");
-                card.className = `cursor-pointer p-4 rounded-2xl flex flex-col items-center justify-center text-center border transition-all ${
-                    isSelected 
-                    ? `bg-gradient-to-br ${c.color} border-rose-300 scale-105 shadow-md` 
-                    : "bg-white/60 hover:bg-white border-slate-200/60"
-                }`;
-                card.onclick = () => selectCharacter(key);
-
+                card.className = `cursor-pointer p-3.5 rounded-2xl border transition-all flex items-center justify-between ${isSelected ? `bg-gradient-to-br ${c.color} border-amber-300 scale-[1.02]` : "bg-white/70 border-slate-100"}`;
+                card.onclick = () => { gameState.selectedCharacter = isSelected ? null : key; saveGameState("סינון גיבורים"); };
                 card.innerHTML = `
-                    <div class="text-3xl mb-1">${c.emoji}</div>
-                    <div class="font-bold text-sm text-slate-800">${c.name}</div>
-                    <div class="text-[10px] text-slate-400 font-semibold">${c.role}</div>
+                    <div class="flex items-center gap-3">
+                        <div class="text-3xl">${c.emoji}</div>
+                        <div><div class="font-extrabold text-sm text-slate-800">${c.name}</div><div class="text-[10px] text-slate-400">${c.role}</div></div>
+                    </div>
+                    <div class="bg-white/90 px-3 py-1 rounded-xl text-left border"><span class="block text-[8px] text-slate-400 font-bold">נקודות אישיות</span><span class="text-xs font-black text-indigo-600">${gameState.personalScores[key] || 0} ✨</span></div>
                 `;
-                container.innerHTML += card.outerHTML;
+                container.appendChild(card);
             });
-
-            const clearBtn = document.getElementById("clear-filter-btn");
-            if (gameState.selectedCharacter) {
-                clearBtn.classList.remove("hidden");
-            } else {
-                clearBtn.classList.add("hidden");
-            }
+            document.getElementById("clear-filter-btn").className = gameState.selectedCharacter ? "w-full mt-4 py-2 bg-slate-100 text-xs font-bold rounded-xl block" : "hidden";
         }
 
-        function selectCharacter(key) {
-            if (gameState.selectedCharacter === key) {
-                gameState.selectedCharacter = null; // Toggle off
-            } else {
-                gameState.selectedCharacter = key;
-                showToast("🧙‍♂️ מסנן גיבורים", `מציג משימות עבור: ${CHARACTERS[key].name}`);
-            }
-            saveGameState();
-        }
+        function clearFilter() { gameState.selectedCharacter = null; saveGameState("ביטול סינון"); }
 
-        function clearFilter() {
-            gameState.selectedCharacter = null;
-            saveGameState();
-        }
-
-        // Get descriptive status text based on room cleanliness percentage
         function getCleanlinessStatus(pct) {
             if (pct === 0) return "🥀 מחכה לקסם";
-            if (pct <= 33) return "🧹 זקוק לטיפוח";
-            if (pct <= 66) return "🌟 הילת סדר נעימה";
-            if (pct <= 99) return "✨ כמעט מבריק";
-            return "👑 מבריק ומקודש!";
+            if (pct <= 50) return "🧹 בטיפול";
+            return "👑 נקי ומבריק!";
         }
 
-        // Render Room Map with Clickable, Dynamic, clean layout
         function renderRooms() {
             const container = document.getElementById("rooms-map-grid");
-            if (!container) return;
-            container.innerHTML = "";
-
+            if (!container) return; container.innerHTML = "";
             gameState.rooms.forEach(room => {
                 const isActive = gameState.selectedRoomId === room.id;
                 const totalTasks = room.tasks.length;
-                const completedTasks = room.tasks.filter(t => t.completed).length;
-                const pct = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-                
-                const activeClass = isActive 
-                    ? "border-amber-400 ring-4 ring-amber-200/50 scale-[1.03]" 
-                    : "border-slate-200/40 bg-white";
-
-                const fallbackGradient = GRADIENT_FALLBACKS[room.id];
-                const statusText = getCleanlinessStatus(pct);
-
-                let statusColorClass = "text-rose-400";
-                if (pct === 100) statusColorClass = "text-emerald-300";
-                else if (pct >= 50) statusColorClass = "text-amber-300";
-
+                const comp = room.tasks.filter(t => t.completed).length;
+                const pct = totalTasks > 0 ? Math.round((comp / totalTasks) * 100) : 0;
                 const card = document.createElement("div");
-                card.className = "room-medallion group cursor-pointer flex flex-col items-center text-center transition-all";
-                card.onclick = () => selectRoom(room.id);
-
+                card.className = "room-medallion group cursor-pointer flex flex-col items-center transition-all";
+                card.onclick = () => { gameState.selectedRoomId = room.id; saveGameState(`מעבר לחדר ${room.name}`); };
                 card.innerHTML = `
-                    <!-- The Clickable Image Container -->
-                    <div class="room-image-container relative w-full aspect-square rounded-3xl overflow-hidden border-2 transition-all shadow-sm group-hover:shadow-md ${activeClass}" id="room-border-${room.id}">
-                        <img id="room-img-${room.id}" class="w-full h-full object-cover opacity-40 transition-opacity duration-500" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" style="background: ${fallbackGradient}">
-                        
-                        <!-- Individual Spinner -->
-                        <div id="room-spinner-${room.id}" class="absolute inset-0 flex items-center justify-center bg-white/60 backdrop-blur-[1px] z-10">
-                            <div class="w-6 h-6 border-2 border-amber-300 border-t-amber-500 rounded-full animate-spin"></div>
-                        </div>
-
-                        <!-- Sleek progress overlay directly at the bottom of the image -->
-                        <div class="absolute bottom-0 inset-x-0 bg-slate-900/60 backdrop-blur-[1px] text-white py-1 px-2 text-[10px] flex justify-between items-center font-bold">
-                            <span>${pct}% סודר</span>
-                            <span class="truncate max-w-[70%] ${statusColorClass}">${statusText}</span>
-                        </div>
+                    <div class="room-image-container relative w-full aspect-square rounded-3xl overflow-hidden border-2 ${isActive ? 'border-amber-400 ring-4 ring-amber-200/50' : 'border-slate-200/40 bg-white'}">
+                        <img id="room-img-${room.id}" class="w-full h-full object-cover opacity-40" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" style="background: ${GRADIENT_FALLBACKS[room.id]}">
+                        <div id="room-spinner-${room.id}" class="absolute inset-0 flex items-center justify-center bg-white/60"><div class="w-4 h-4 border-2 border-amber-500 rounded-full animate-spin"></div></div>
+                        <div class="absolute bottom-0 inset-x-0 bg-slate-900/60 text-white py-0.5 px-2 text-[9px] flex justify-between items-center"><span>${pct}%</span><span class="truncate">${getCleanlinessStatus(pct)}</span></div>
                     </div>
-
-                    <!-- Room Label (Positioned cleanly below the image) -->
-                    <div class="mt-2 text-right w-full px-1">
-                        <h4 class="font-bold text-xs text-slate-800 flex items-center gap-1 justify-center sm:justify-start">
-                            <span class="text-sm">${room.icon}</span>
-                            <span class="truncate">${room.name.split(' ').slice(1).join(' ')}</span>
-                        </h4>
-                        <p class="text-[9px] text-slate-400 font-semibold truncate mt-0.5">${room.subtitle}</p>
-                    </div>
+                    <div class="mt-1 text-xs font-bold text-slate-800 text-center">${room.icon} ${room.name.split(' ').slice(1).join(' ')}</div>
                 `;
                 container.appendChild(card);
-                
-                // Fetch cached image or request from GenAI
-                const cached = localStorage.getItem(`room_img_cache_${room.id}`);
-                const imgElement = document.getElementById(`room-img-${room.id}`);
-                const spinner = document.getElementById(`room-spinner-${room.id}`);
-                if (cached) {
-                    if (imgElement) {
-                        imgElement.src = cached;
-                        imgElement.classList.remove("opacity-40");
-                        imgElement.classList.add("opacity-100");
-                    }
-                    if (spinner) spinner.classList.add("hidden");
-                } else {
-                    fetchRoomImage(room.id, room.prompt);
-                }
+                const cached = localStorage.getItem(`room_img_cache_v3_${room.id}`);
+                if (cached) { document.getElementById(`room-img-${room.id}`).src = cached; document.getElementById(`room-spinner-${room.id}`).classList.add("hidden"); }
+                else { fetchRoomImage(room.id, room.prompt); }
             });
         }
 
-        function selectRoom(roomId) {
-            gameState.selectedRoomId = roomId;
-            saveGameState();
-        }
-
-        // Render Detailed Task List
         function renderTasks() {
             const listContainer = document.getElementById("tasks-list");
             listContainer.innerHTML = "";
-
             const activeRoom = gameState.rooms.find(r => r.id === gameState.selectedRoomId);
             if (!activeRoom) return;
 
-            // Update room header
-            document.getElementById("active-room-icon").innerText = activeRoom.icon;
             document.getElementById("active-room-title").innerText = activeRoom.name;
             document.getElementById("active-room-subtitle").innerText = activeRoom.subtitle;
             document.getElementById("active-room-rules").innerText = activeRoom.specialRules;
 
-            // Handle active filter notification
-            const filterNotice = document.getElementById("active-filters-notice");
-            if (gameState.selectedCharacter) {
-                filterNotice.classList.remove("hidden");
-            } else {
-                filterNotice.classList.add("hidden");
-            }
-
-            // Filter tasks if character filter is active
             let tasksToRender = activeRoom.tasks;
-            if (gameState.selectedCharacter) {
-                const activeChar = gameState.selectedCharacter;
-                tasksToRender = activeRoom.tasks.filter(t => {
-                    if (t.char === activeChar) return true;
-                    if (t.char === "כולם") return true;
-                    if (t.char === "אחים" && (activeChar === "בכורה" || activeChar === "ילד" || activeChar === "פעוטה")) return true;
-                    return false;
-                });
-            }
+            if (gameState.selectedCharacter) tasksToRender = activeRoom.tasks.filter(t => t.char === gameState.selectedCharacter || t.char === "כולם");
 
-            if (tasksToRender.length === 0) {
-                listContainer.innerHTML = `
-                    <div class="text-center py-8 text-slate-400 text-xs">
-                        <span class="text-2xl block mb-2">🎈</span>
-                        אין משימות מתאימות לגיבור/ה שנבחר/ה בחדר זה.
-                    </div>
+            tasksToRender.forEach(task => {
+                const card = document.createElement("div");
+                card.className = `flex items-center justify-between p-3 rounded-2xl border ${task.completed ? 'bg-emerald-50/40 text-slate-400': 'bg-white'}`;
+                card.innerHTML = `
+                    <div class="flex items-center gap-3"><button onclick="toggleTask(${task.id}, event)" class="w-5 h-5 rounded border flex items-center justify-center bg-white ${task.completed ? 'bg-emerald-500 text-white':''}">${task.completed ? '✓':''}</button>
+                    <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title}</h4><p class="text-[10px] text-slate-400">${task.desc}</p></div></div>
+                    <span class="text-[9px] px-2 py-0.5 rounded font-bold border ${task.isFamily ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}">${task.isFamily ? '🏡 משפחתי' : '👤 אישי'} +${task.points}</span>
                 `;
-            } else {
-                tasksToRender.forEach(task => {
-                    const assignConfig = CHARACTERS[task.char] || { emoji: "👤", name: task.char, color: "bg-slate-100", text: "text-slate-600" };
-                    
-                    const taskCard = document.createElement("div");
-                    taskCard.className = `flex items-center justify-between p-4 rounded-2xl border transition-all ${
-                        task.completed 
-                        ? "bg-emerald-50/40 border-emerald-100 text-slate-400" 
-                        : "bg-white/90 border-slate-100/80 hover:border-amber-100 hover:shadow-sm"
-                    }`;
-
-                    taskCard.innerHTML = `
-                        <div class="flex items-start gap-3 flex-1 min-w-0">
-                            <!-- Custom Checkbox -->
-                            <button onclick="toggleTask(${task.id}, event)" class="w-6 h-6 rounded-lg border-2 mt-0.5 flex-shrink-0 flex items-center justify-center transition-colors ${
-                                task.completed 
-                                ? "bg-emerald-500 border-emerald-500 text-white" 
-                                : "border-slate-300 hover:border-amber-400 bg-white"
-                            }">
-                                ${task.completed ? '<i class="fa-solid fa-check text-xs"></i>' : ''}
-                            </button>
-                            
-                            <!-- Texts -->
-                            <div class="min-w-0">
-                                <h4 class="font-bold text-sm ${task.completed ? "line-through text-slate-400" : "text-slate-800"}">${task.title}</h4>
-                                <p class="text-[11px] text-slate-400 mt-0.5 leading-relaxed line-clamp-2">${task.desc}</p>
-                            </div>
-                        </div>
-
-                        <!-- Badge Assignee & Points -->
-                        <div class="flex items-center gap-2 flex-shrink-0 mr-4">
-                            <span class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-amber-50 text-amber-800 border border-amber-100 flex items-center gap-1">
-                                <span class="text-xs">✨</span> +${task.points}
-                            </span>
-                            <span class="text-[10px] px-2.5 py-1 rounded-full font-bold bg-gradient-to-r ${assignConfig.color} ${assignConfig.text} border border-white/20 flex items-center gap-1">
-                                <span>${assignConfig.emoji}</span>
-                                <span class="hidden sm:inline">${assignConfig.name.split(' ')[0]}</span>
-                            </span>
-                        </div>
-                    `;
-                    listContainer.appendChild(taskCard);
-                });
-            }
-
-            // Stats update
-            const totalRoomTasks = activeRoom.tasks.length;
-            const completedRoomTasks = activeRoom.tasks.filter(t => t.completed).length;
-            const roomPct = totalRoomTasks > 0 ? Math.round((completedRoomTasks / totalRoomTasks) * 100) : 0;
-            document.getElementById("room-completed-count").innerText = `📌 הושלמו: ${completedRoomTasks}/${totalRoomTasks} משימות`;
-            document.getElementById("room-completion-pct").innerText = `${roomPct}% הושלם`;
-        }
-
-        // Toggle Task Completion State
-        function toggleTask(taskId, event) {
-            let foundTask = null;
-            gameState.rooms.forEach(room => {
-                const t = room.tasks.find(tk => tk.id === taskId);
-                if (t) foundTask = t;
+                listContainer.appendChild(card);
             });
+            document.getElementById("room-completed-count").innerText = `📌 הושלמו: ${activeRoom.tasks.filter(t => t.completed).length}/${activeRoom.tasks.length} משימות`;
+        }
 
-            if (foundTask) {
-                foundTask.completed = !foundTask.completed;
-                if (foundTask.completed) {
-                    createSparkles(event.clientX, event.clientY);
-                    showToast("🎉 משימה הושלמה!", `נוספו +${foundTask.points} נקודות קסם למד הממלכתי!`);
-                }
-                saveGameState();
+        function toggleTask(taskId, event) {
+            let t = null;
+            gameState.rooms.forEach(r => { r.tasks.forEach(tk => { if(tk.id === taskId) t = tk; })});
+            if (t) {
+                t.completed = !t.completed;
+                createSparkles(event.clientX, event.clientY);
+                saveGameState(`משימה: ${t.title} שונתה`);
             }
         }
 
-        // Mark entire room as completed
         function markAllRoomTasksCompleted() {
             const activeRoom = gameState.rooms.find(r => r.id === gameState.selectedRoomId);
-            if (!activeRoom) return;
-
-            activeRoom.tasks.forEach(t => t.completed = true);
-            showToast("🌟 חדר קדוש נקי!", `סידרתם את כל ${activeRoom.name}! הממלכה מודה לכם.`);
-            saveGameState();
+            if (activeRoom) { activeRoom.tasks.forEach(t => t.completed = true); saveGameState(`ניקוי מלא של חדר ${activeRoom.name}`); }
         }
 
-        // Render Good Deeds list
         function renderGoodDeeds() {
-            const feed = document.getElementById("deeds-feed");
-            feed.innerHTML = "";
-
-            if (gameState.goodDeeds.length === 0) {
-                feed.innerHTML = `<p class="text-[11px] text-slate-400 italic text-center py-4">טרם נרשמו מעשי חסד השבוע. היו הראשונים להעניק!</p>`;
-                return;
-            }
-
-            // Reverse to show newest first
-            const reversedDeeds = [...gameState.goodDeeds].reverse();
-
-            reversedDeeds.forEach(deed => {
-                const char = CHARACTERS[deed.doer] || { emoji: "✨", name: deed.doer };
-                const item = document.createElement("div");
-                item.className = "p-2.5 bg-white/70 border border-pink-100 rounded-xl flex items-start gap-2 shadow-sm relative overflow-hidden";
-                item.innerHTML = `
-                    <div class="text-xl mt-0.5">${char.emoji}</div>
-                    <div class="flex-1 min-w-0">
-                        <div class="flex justify-between items-center mb-0.5">
-                            <span class="font-bold text-slate-800 text-[11px]">${char.name}</span>
-                            <span class="text-[9px] text-pink-500 font-extrabold bg-pink-50 px-1.5 py-0.5 rounded-full border border-pink-100">+${deed.points} ✨</span>
-                        </div>
-                        <p class="text-slate-500 text-[10px] leading-relaxed">${deed.desc}</p>
-                    </div>
-                `;
-                feed.appendChild(item);
+            const feed = document.getElementById("deeds-feed"); feed.innerHTML = "";
+            if (gameState.goodDeeds.length === 0) { feed.innerHTML = `<p class="text-center text-slate-400 text-[11px]">אין מעשי חסד רשומים.</p>`; return; }
+            [...gameState.goodDeeds].reverse().forEach(d => {
+                feed.innerHTML += `<div class="p-2 bg-white rounded-xl border flex justify-between items-center"><span>✨ ${d.doer}: ${d.desc}</span><span class="text-rose-500 font-bold">+${d.points} 🏡</span></div>`;
             });
         }
 
-        // Submit Good Deed
         function submitGoodDeed(e) {
-            e.preventDefault();
-            const doer = document.getElementById("deed-doer").value;
-            const type = document.getElementById("deed-type").value;
-            const desc = document.getElementById("deed-desc").value;
-
-            if (!doer) {
-                showToast("⚠️ שגיאה", "אנא בחרו מי עשה את החסד");
-                return;
-            }
-
-            // Define point values based on type
-            let pts = 8;
-            if (type === "עזרה לאח/ות" || type === "ויתור מלכותי" || type === "עזרה בעת צרה") pts = 10;
-            if (type === "צוות משימה משותף") pts = 15;
-            if (type === "כוס מים של אהבה" || type === "ציור מעודד") pts = 5;
-
-            const newDeed = {
-                id: Date.now(),
-                doer: doer,
-                type: type,
-                desc: desc,
-                date: "עכשיו",
-                points: pts
-            };
-
-            gameState.goodDeeds.push(newDeed);
-            
-            // Celebratory effects
-            showToast("✨ קרן אור של חסד!", `רשמנו את החסד של ${CHARACTERS[doer].name}! מד האנרגיה גדל ב-+${pts} נקודות.`);
-            
-            // Reset fields
+            e.preventDefault(); const doer = document.getElementById("deed-doer").value; const desc = document.getElementById("deed-desc").value;
+            if (!doer) return;
+            gameState.goodDeeds.push({ id: Date.now(), doer: doer, desc: desc, points: 10 });
             document.getElementById("deed-desc").value = "";
-            document.getElementById("deed-doer").value = "";
-
-            saveGameState();
+            saveGameState(`מעשה חסד של ${doer}`);
         }
 
-        function updateDeedDescription() {
-            const type = document.getElementById("deed-type").value;
-            const descInput = document.getElementById("deed-desc");
-            
-            if (type === "עזרה לאח/ות") descInput.placeholder = "לדוגמה: נווה דוד הקריא ספר או הניח צעצוע בתיבה בשביל ארבל";
-            else if (type === "כוס מים של אהבה") descInput.placeholder = "לדוגמה: שקד הכינה כוס תה חם לנעמי כשחזרה עייפה";
-            else if (type === "ציור מעודד") descInput.placeholder = "לדוגמה: הושאר מכתב אהבה חמוד על הכרית של אבא שימי";
-            else if (type === "ויתור מלכותי") descInput.placeholder = "לדוגמה: ויתר באהבה על השיר הראשון בנסיעה";
-            else if (type === "עזרה בעת צרה") descInput.placeholder = "לדוגמה: הבאת בובת פרווה מנחמת לארבל שקיבלה מכה קטנה";
-            else if (type === "צוות משימה משותף") descInput.placeholder = "לדוגמה: שקד ונווה דוד סידרו ביחד את כל הצעצועים בסלון";
-            else descInput.placeholder = "לדוגמה: נעשה מעשה חסד יוצא דופן ששימח את כולנו";
-        }
-
-        // Update Global Score & Progress Bar DOM
         function updateProgressDOM() {
-            const scoreText = document.getElementById("score-text");
-            const bar = document.getElementById("family-progress-bar");
-            const pctText = document.getElementById("percentage-text");
-
-            scoreText.innerText = gameState.score;
-            
-            // Map score to percentage (capped at 100%)
-            const rawPct = (gameState.score / gameState.maxScore) * 100;
-            const finalPct = Math.min(Math.round(rawPct), 100);
-
-            bar.style.width = `${finalPct}%`;
-            pctText.innerText = `${finalPct}%`;
-
-            // Milestone celebrations
-            const gift = document.getElementById("gift-milestone");
-            const crown = document.getElementById("crown-milestone");
-
-            if (finalPct >= 50) {
-                gift.classList.add("bg-amber-400", "text-white");
-                gift.classList.remove("bg-white");
-            } else {
-                gift.classList.remove("bg-amber-400", "text-white");
-                gift.classList.add("bg-white");
-            }
-
-            if (finalPct >= 100) {
-                crown.classList.add("bg-amber-500", "text-white", "animate-bounce");
-                crown.classList.remove("bg-amber-100");
-            } else {
-                crown.classList.remove("bg-amber-500", "text-white", "animate-bounce");
-                crown.classList.add("bg-amber-100");
-            }
-
-            // Update Selected Rewards Displays
-            const r50Text = document.getElementById("reward-50-selected");
-            const r100Text = document.getElementById("reward-100-selected");
-            const activeRewardDisplay = document.getElementById("active-reward-display");
-
-            if (gameState.selectedReward50) {
-                const found = REWARDS_50.find(r => r.id === gameState.selectedReward50);
-                r50Text.innerText = found ? found.title : "לחצו לבחירת פרס";
-            } else {
-                r50Text.innerText = "לחצו לבחירת פרס";
-            }
-
+            const finalPct = Math.min(Math.round((gameState.score / gameState.maxScore) * 100), 100);
+            if (document.getElementById("family-progress-bar")) document.getElementById("family-progress-bar").style.width = `${finalPct}%`;
+            document.getElementById("score-text").innerText = gameState.score;
+            document.getElementById("percentage-text").innerText = `${finalPct}%`;
             if (gameState.selectedReward100) {
                 const found = REWARDS_100.find(r => r.id === gameState.selectedReward100);
-                r100Text.innerText = found ? found.title : "לחצו לבחירת פרס";
-            } else {
-                r100Text.innerText = "לחצו לבחירת פרס";
+                document.getElementById("active-reward-display").innerText = found ? found.title : "טרם נבחר פרס לשבוע זה!";
             }
-
-            // Update summary footer text
-            if (gameState.selectedReward50 || gameState.selectedReward100) {
-                let rewardText = "";
-                if (gameState.selectedReward50) {
-                    const found50 = REWARDS_50.find(r => r.id === gameState.selectedReward50);
-                    rewardText += `חצי דרך (50%): ${found50.title}`;
-                }
-                if (gameState.selectedReward100) {
-                    const found100 = REWARDS_100.find(r => r.id === gameState.selectedReward100);
-                    rewardText += rewardText ? ` | יעד שבועי (100%): ${found100.title}` : `יעד שבועי (100%): ${found100.title}`;
-                }
-                activeRewardDisplay.innerText = rewardText;
-            } else {
-                activeRewardDisplay.innerText = "טרם נבחרו פרסים לשבוע זה! לחצו על המלבנים לבחירה.";
+            if (GOOGLE_SCRIPT_URL) {
+                document.getElementById("sync-status-badge").className = "text-xs bg-emerald-100 text-emerald-700 px-2.5 py-0.5 rounded-full font-bold";
+                document.getElementById("sync-status-badge").innerText = "מחובר ומסונכרן";
             }
         }
 
-        // 5. Rewards Selection Modals
-        let activeMilestoneTarget = null;
         function openRewardModal(target) {
-            activeMilestoneTarget = target;
-            const modal = document.getElementById("reward-modal");
-            const title = document.getElementById("modal-reward-title");
-            const listContainer = document.getElementById("modal-rewards-list");
-            
-            listContainer.innerHTML = "";
-            modal.classList.remove("hidden");
-
-            if (target === 50) {
-                title.innerText = "🎁 בחירת פרס חצי הדרך (50%)";
-                REWARDS_50.forEach(reward => {
-                    const isSelected = gameState.selectedReward50 === reward.id;
-                    const item = document.createElement("div");
-                    item.className = `p-4 rounded-2xl cursor-pointer border transition-all ${
-                        isSelected ? "bg-amber-50 border-amber-400 font-bold" : "bg-white hover:bg-slate-50 border-slate-100"
-                    }`;
-                    item.onclick = () => selectReward(reward.id);
-                    item.innerHTML = `
-                        <h4 class="text-sm text-slate-800">${reward.title}</h4>
-                        <p class="text-[11px] text-slate-400 mt-1 font-normal leading-relaxed">${reward.desc}</p>
-                    `;
-                    listContainer.appendChild(item);
-                });
-            } else {
-                title.innerText = "🏆 בחירת פרס היעד השבועי (100%)";
-                REWARDS_100.forEach(reward => {
-                    const isSelected = gameState.selectedReward100 === reward.id;
-                    const item = document.createElement("div");
-                    item.className = `p-4 rounded-2xl cursor-pointer border transition-all ${
-                        isSelected ? "bg-amber-50 border-amber-400 font-bold" : "bg-white hover:bg-slate-50 border-slate-100"
-                    }`;
-                    item.onclick = () => selectReward(reward.id);
-                    item.innerHTML = `
-                        <h4 class="text-sm text-slate-800">${reward.title}</h4>
-                        <p class="text-[11px] text-slate-400 mt-1 font-normal leading-relaxed">${reward.desc}</p>
-                    `;
-                    listContainer.appendChild(item);
-                });
-            }
-        }
-
-        function selectReward(rewardId) {
-            if (activeMilestoneTarget === 50) {
-                gameState.selectedReward50 = rewardId;
-                showToast("🎁 הפרס נבחר!", "כשנגיע לחצי הדרך נפרוס את קלף הפרס הזה!");
-            } else {
-                gameState.selectedReward100 = rewardId;
-                showToast("🏆 הפרס הגדול נבחר!", "סוף השבוע הולך להיות חגיגי במיוחד! קדימה לנקות!");
-            }
-            closeRewardModal();
-            saveGameState();
-        }
-
-        function closeRewardModal() {
-            document.getElementById("reward-modal").classList.add("hidden");
-        }
-
-        // 6. In-Game Safe Reset Confirmation Modal
-        function triggerResetConfirmation() {
-            const modal = document.getElementById("confirm-modal");
-            modal.classList.remove("hidden");
-        }
-
-        function closeConfirmModal() {
-            document.getElementById("confirm-modal").classList.add("hidden");
-        }
-
-        function confirmReset() {
-            gameState.rooms.forEach(room => {
-                room.tasks.forEach(task => task.completed = false);
+            const modal = document.getElementById("reward-modal"); const list = document.getElementById("modal-rewards-list");
+            list.innerHTML = ""; modal.classList.remove("hidden");
+            REWARDS_100.forEach(reward => {
+                const item = document.createElement("div"); item.className = "p-3 border rounded-xl bg-white hover:bg-slate-50 cursor-pointer text-right";
+                item.onclick = () => { gameState.selectedReward100 = reward.id; closeRewardModal(); saveGameState(`בחירת פרס: ${reward.title}`); };
+                item.innerHTML = `<h4 class="text-xs font-bold">${reward.title}</h4><p class="text-[10px] text-slate-400">${reward.desc}</p>`;
+                list.appendChild(item);
             });
-            gameState.goodDeeds = [];
-            gameState.selectedReward50 = null;
-            gameState.selectedReward100 = null;
-            gameState.selectedCharacter = null;
-            
-            showToast("♻️ שבוע חדש התחיל!", "כל המשימות אופסו וספר החסד מוכן לקבלת כוכבים חדשים.");
-            closeConfirmModal();
-            saveGameState();
         }
+        function closeRewardModal() { document.getElementById("reward-modal").classList.add("hidden"); }
+        function triggerResetConfirmation() { document.getElementById("confirm-modal").classList.remove("hidden"); }
+        function closeConfirmModal() { document.getElementById("confirm-modal").classList.add("hidden"); }
+        function confirmReset() { syncToGoogleDrive("איפוס שבוע לקראת שבוע חדש"); resetToInitial(); closeConfirmModal(); saveGameState("איפוס שבועי חדש"); }
 
-        // 7. Save Progress to Cloud simulation
-        function saveProgressToCloud() {
-            showToast("☁️ סנכרון משפחתי", "ההתקדמות הביתית נשמרה בשרת בהצלחה! ניתן להתחבר מכל טאבלט או טלפון בבית.");
-        }
-
-        // 8. Visual Confetti/Sparkles Generator
         function createSparkles(x, y) {
-            for (let i = 0; i < 20; i++) {
-                const sparkle = document.createElement('div');
-                sparkle.className = 'sparkle text-lg';
-                const colors = ['💛', '💖', '✨', '⭐', '🌸'];
-                sparkle.innerText = colors[Math.floor(Math.random() * colors.length)];
-                sparkle.style.left = `${x}px`;
-                sparkle.style.top = `${y}px`;
-                
-                const angle = Math.random() * Math.PI * 2;
-                const distance = 40 + Math.random() * 80;
-                const tx = Math.cos(angle) * distance;
-                const ty = Math.sin(angle) * distance;
-                const rot = Math.random() * 360;
-
-                sparkle.style.setProperty('--x', `${tx}px`);
-                sparkle.style.setProperty('--y', `${ty}px`);
-                sparkle.style.setProperty('--r', `${rot}deg`);
-
-                document.body.appendChild(sparkle);
-
-                // Cleanup
-                setTimeout(() => {
-                    sparkle.remove();
-                }, 1200);
+            for (let i = 0; i < 15; i++) {
+                const s = document.createElement('div'); s.className = 'sparkle text-xs'; s.innerText = '✨'; s.style.left = `${x}px`; s.style.top = `${y}px`;
+                s.style.setProperty('--x', `${(Math.random() - 0.5) * 100}px`); s.style.setProperty('--y', `${(Math.random() - 0.5) * 100}px`); s.style.setProperty('--r', `${Math.random() * 360}deg`);
+                document.body.appendChild(s); setTimeout(() => s.remove(), 1200);
             }
         }
 
-        // 9. Toast system
-        function showToast(title, message, icon = "✨") {
-            const toast = document.getElementById("custom-toast");
-            const tIcon = document.getElementById("toast-icon");
-            const tTitle = document.getElementById("toast-title");
-            const tMsg = document.getElementById("toast-message");
-
-            tIcon.innerText = icon;
-            tTitle.innerText = title;
-            tMsg.innerText = message;
-
-            // Animate In
-            toast.classList.remove("opacity-0", "translate-y-20", "pointer-events-none");
-            toast.classList.add("opacity-100", "translate-y-0");
-
-            // Dismiss after 4s
-            setTimeout(() => {
-                toast.classList.add("opacity-0", "translate-y-20", "pointer-events-none");
-                toast.classList.remove("opacity-100", "translate-y-0");
-            }, 4000);
+        function showToast(title, message) {
+            const toast = document.getElementById("custom-toast"); document.getElementById("toast-title").innerText = title; document.getElementById("toast-message").innerText = message;
+            toast.classList.remove("opacity-0", "translate-y-20", "pointer-events-none"); setTimeout(() => toast.classList.add("opacity-0", "translate-y-20", "pointer-events-none"), 3500);
         }
     </script>
 </body>
