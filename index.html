@@ -140,7 +140,7 @@
                     <div>
                         <span class="text-xs text-slate-400 font-semibold block">נקודות משפחתיות שנצברו:</span>
                         <span id="score-text" class="text-2xl font-black text-rose-500">0</span>
-                        <span class="text-xs text-slate-500 font-bold">/ 245</span>
+                        <span class="text-xs text-slate-500 font-bold">/ 255</span>
                     </div>
                     <div class="text-left">
                         <span id="percentage-text" class="text-3xl font-black text-amber-500">0%</span>
@@ -308,12 +308,12 @@
 
         const INITIAL_STATE = {
             currentWeek: "שבוע 1: מנקים באהבה",
-            score: 0, maxScore: 245, selectedCharacter: null, selectedRoomId: 1, selectedReward100: null,
+            score: 0, maxScore: 255, selectedCharacter: null, selectedRoomId: 1, selectedReward100: null,
             personalScores: { "הורים": 0, "בכורה": 0, "ילד": 0, "פעוטה": 0 },
             rooms: [
                 {
                     id: 1, name: "🌌 מצפה הכוכבים", subtitle: "חדר שקד (בת 10)", icon: "🌌", specialRules: "🛏️ מיטה אישית | 📚 שולחן לימוד | 👗 ארון בגדים",
-                    prompt: "A whimsical fairytale astronomy tower bedroom with stars, watercolor style.",
+                    prompt: "A whimsical fairytale astronomy tower bedroom with large windows showing a night sky full of glowing stars, magical hanging star mobiles dangling from the ceiling casting a soft golden glow, a cozy bed with fluffy colorful pillows, soft lavender and indigo watercolor palette.",
                     tasks: [
                         { id: 101, title: "סידור מיטה בכל בוקר ☀️", desc: "מתיחת סדינים וסידור כריות — כל יום לפני בית ספר", char: "בכורה", points: 10, isFamily: false, completed: false },
                         { id: 102, title: "איסוף בגדים מלוכלכים לכביסה 🧺", desc: "כל בגד מלוכלך ישר לסל הכביסה, לא לרצפה", char: "בכורה", points: 10, isFamily: false, completed: false },
@@ -325,7 +325,7 @@
                 },
                 {
                     id: 2, name: "🧸 מאורת הקסמים המשותפת", subtitle: "חדר נווה דוד וארבל", icon: "🧸", specialRules: "🛏️ 2 מיטות | 🧸 פינת צעצועים | 📚 שולחן עבודה",
-                    prompt: "A magical cozy playroom with soft toys, children beds, watercolor style.",
+                    prompt: "A bright cheerful children's shared bedroom with two cozy beds, soft green and yellow walls, turquoise accents, jungle-themed plush toys, leafy plant decorations, sunlight streaming in, fresh mint and lime watercolor palette.",
                     tasks: [
                         { id: 201, title: "סידור המיטות בכל בוקר ☀️", desc: "נווה דוד מסדר את שתי המיטות — כל יום", char: "ילד", points: 10, isFamily: false, completed: false },
                         { id: 202, title: "איסוף צעצועים וסדר 🧸", desc: "כל צעצוע חוזר לתיבה או למדף שלו", char: "ילד", points: 10, isFamily: false, completed: false },
@@ -336,7 +336,7 @@
                 },
                 {
                     id: 3, name: "👑 היכל ההורים", subtitle: "חדר השינה של שימי ונעמי", icon: "👑", specialRules: "🛏️ מיטה זוגית | 💼 פינת עבודה | 👔 ארון מלכותי",
-                    prompt: "An elegant, peaceful parents' bedroom, cozy master setup, watercolor nostalgic style.",
+                    prompt: "An elegant serene parents' bedroom with cool slate-blue and soft grey tones, a neatly made king-sized bed with white linens and grey pillows, subtle silver accents, calm morning light, watercolor style with blue-grey and silver palette.",
                     tasks: [
                         { id: 301, title: "סידור מיטה זוגית בכל בוקר ☀️", desc: "מתיחת כיסוי מלכותי וסידור כריות — כל יום", char: "הורים", points: 15, isFamily: false, completed: false },
                         { id: 302, title: "ניקוי שידות לילה 🌙", desc: "ניגוב אבק עדין וסידור — פעם בשבוע", char: "הורים", points: 10, isFamily: false, completed: false },
@@ -367,7 +367,8 @@
                         { id: 503, title: "השקיית עציצים וצמחים 🌿", desc: "השקיית כל עציצי הגינה והמרפסת", char: "כולם", points: 10, isFamily: true, completed: false },
                         { id: 504, title: "טאטוא ושטיפת מדרגות 🧹", desc: "שקד מטאטאת ושוטפת את המדרגות מלמעלה למטה, פעם בשבוע", char: "בכורה", points: 15, isFamily: true, completed: false },
                         { id: 505, title: "סידור פינת נעליים 👟", desc: "נווה דוד מסדר כל הנעליים בשורות מסודרות, פעם בשבוע", char: "ילד", points: 15, isFamily: true, completed: false },
-                        { id: 506, title: "ארגון ארון ציוד ניקיון 🧹", desc: "סדר בסגל — מגבים, סמרטוטים וחומרים במקומם", char: "הורים", points: 10, isFamily: true, completed: false }
+                        { id: 506, title: "ארגון ארון ציוד ניקיון 🧹", desc: "סדר בסגל — מגבים, סמרטוטים וחומרים במקומם", char: "הורים", points: 10, isFamily: true, completed: false },
+                        { id: 507, title: "סידור ארון הכניסה 🧥", desc: "תלייה וקיפול מעילים, כובעים וצעיפים — כולם במקומם", char: "כולם", points: 10, isFamily: true, completed: false }
                     ]
                 },
                 {
