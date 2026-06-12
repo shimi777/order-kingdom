@@ -96,6 +96,11 @@
         <button id="global-edit-pw-btn" onclick="changeEditPassword()" class="hidden py-1.5 px-3 bg-white/80 hover:bg-white text-slate-500 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🔑 שינוי סיסמה</button>
     </div>
 
+    <div class="max-w-7xl mx-auto px-4 pt-2 flex justify-center gap-2">
+        <button id="tab-chores" onclick="switchView('chores')" class="py-2 px-5 bg-amber-500 text-white border border-amber-500 rounded-2xl text-sm font-bold shadow-sm transition-all">🏰 ממלכת הסדר</button>
+        <button id="tab-schedule" onclick="switchView('schedule')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">📅 לו״ז</button>
+    </div>
+
     <header class="max-w-7xl mx-auto px-4 pt-3 pb-2">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/60 backdrop-blur-md border border-peach-200/40 rounded-3xl p-6 shadow-sm">
             <div class="flex items-center gap-4 text-center md:text-right">
@@ -123,6 +128,7 @@
         </div>
     </header>
 
+    <div id="view-chores">
     <main class="max-w-7xl mx-auto px-4 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         <section class="lg:col-span-4 flex flex-col gap-6">
@@ -285,6 +291,70 @@
 
         </section>
     </main>
+    </div><!-- /view-chores -->
+
+    <div id="view-schedule" class="hidden max-w-7xl mx-auto px-4 mt-6 flex flex-col gap-6">
+
+        <div class="flex justify-center gap-2">
+            <button id="subtab-weekly" onclick="switchScheduleSub('weekly')" class="py-1.5 px-4 bg-amber-500 text-white border border-amber-500 rounded-xl text-xs font-bold shadow-sm">📅 שבועי</button>
+            <button id="subtab-monthly" onclick="switchScheduleSub('monthly')" class="py-1.5 px-4 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🗓️ חודשי</button>
+        </div>
+
+        <div id="sub-weekly">
+            <div class="watercolor-card p-6">
+                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4"><span class="text-2xl">📅</span> לו״ז שבועי</h3>
+                <p class="text-[11px] text-slate-400 mb-4">חוגים ופעילויות שחוזרים כל שבוע + מה אוכלים בערב. נשמר לתמיד ואינו מתאפס באיפוס השבועי.</p>
+                <div class="overflow-x-auto custom-scrollbar pb-2">
+                    <table class="w-full border-collapse text-xs">
+                        <thead id="schedule-thead"></thead>
+                        <tbody id="schedule-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="sub-monthly" class="hidden">
+            <div class="watercolor-card p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <button onclick="monthPrev()" class="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xl flex items-center justify-center">›</button>
+                    <div class="flex items-center gap-3">
+                        <h3 id="month-title" class="text-xl font-bold text-slate-800"></h3>
+                        <button onclick="monthToday()" class="py-1 px-3 bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-100 rounded-lg text-[11px] font-bold">היום</button>
+                    </div>
+                    <button onclick="monthNext()" class="w-9 h-9 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-600 text-xl flex items-center justify-center">‹</button>
+                </div>
+                <p class="text-[11px] text-slate-400 mb-3">אירועים חד-פעמיים בתאריך מסוים (ימי הולדת, טיולים, תורים). לחצו על יום כדי להוסיף או לערוך.</p>
+                <div class="grid grid-cols-7 gap-1 mb-1" id="month-daynames"></div>
+                <div class="grid grid-cols-7 gap-1" id="month-grid"></div>
+            </div>
+        </div>
+
+        <div class="watercolor-card p-6">
+            <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4"><span class="text-2xl">🛒</span> רשימת קניות</h3>
+            <div class="flex gap-2 mb-4">
+                <input id="shopping-input" type="text" placeholder="הוסיפו מצרך..." onkeydown="if(event.key==='Enter')addShoppingItem()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                <button onclick="addShoppingItem()" class="py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm whitespace-nowrap">➕ הוסף</button>
+            </div>
+            <div id="shopping-list" class="space-y-2"></div>
+            <button onclick="clearBoughtItems()" class="w-full mt-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs">🧹 נקה שנקנו</button>
+        </div>
+
+    </div><!-- /view-schedule -->
+
+    <div id="date-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="date-editor-title" class="text-xl font-black text-amber-800">📅 אירועי היום</h3>
+                <button onclick="closeDateEditor()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
+            </div>
+            <input type="hidden" id="date-editor-key">
+            <textarea id="date-editor-text" rows="6" placeholder="לדוגמה: 16:00 חוג ציור&#10;יום הולדת לסבתא — לקנות מתנה" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300 resize-y"></textarea>
+            <div class="flex gap-3 mt-5">
+                <button onclick="saveDateEditor()" class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 שמירה</button>
+                <button onclick="closeDateEditor()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">ביטול</button>
+            </div>
+        </div>
+    </div>
 
     <div id="confirm-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center relative">
@@ -618,20 +688,45 @@
         function ensureGameDefaults() {
             if (!gameState.rewards100)   gameState.rewards100   = JSON.parse(JSON.stringify(DEFAULT_REWARDS_100));
             if (!gameState.prizeOptions) gameState.prizeOptions = JSON.parse(JSON.stringify(DEFAULT_PRIZE_OPTIONS));
+            // ===== לו״ז שבועי =====
+            if (!gameState.weeklySchedule) gameState.weeklySchedule = {};
+            const ws = gameState.weeklySchedule;
+            if (!ws.activities) ws.activities = {};
+            for (let d = 0; d < 7; d++) {
+                if (!ws.activities[d]) ws.activities[d] = {};
+                ["הורים", "בכורה", "ילד", "פעוטה"].forEach(k => {
+                    if (ws.activities[d][k] === undefined) ws.activities[d][k] = "";
+                });
+            }
+            if (!ws.dinners) ws.dinners = {};
+            for (let d = 0; d < 7; d++) { if (ws.dinners[d] === undefined) ws.dinners[d] = ""; }
+            if (!ws.breakfasts) ws.breakfasts = {};
+            if (ws.breakfasts[6] === undefined) ws.breakfasts[6] = ""; // ארוחת בוקר — שבת בלבד
+            // ===== רשימת קניות ואירועים חודשיים =====
+            if (!gameState.shoppingList) gameState.shoppingList = [];
+            if (!gameState.datedEvents)  gameState.datedEvents  = {};
         }
 
         // איפוס שבועי — שומר על המשימות והפרסים שההורים הגדירו, מאפס רק השלמות וניקוד
         function resetToInitial() {
-            const keepRooms   = gameState.rooms;
-            const keepRewards = gameState.rewards100;
-            const keepPrizes  = gameState.prizeOptions;
+            const keepRooms     = gameState.rooms;
+            const keepRewards   = gameState.rewards100;
+            const keepPrizes    = gameState.prizeOptions;
+            const keepSchedule  = gameState.weeklySchedule;   // הלו״ז השבועי שורד איפוס
+            const keepShopping  = gameState.shoppingList;     // רשימת הקניות שורדת איפוס
+            const keepEvents    = gameState.datedEvents;      // אירועי הלוח החודשי שורדים איפוס
+            const keepOverrides = gameState.characterOverrides; // אווטארים/שמות שורדים איפוס
             gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
             if (keepRooms) {
                 gameState.rooms = keepRooms;
                 gameState.rooms.forEach(r => r.tasks.forEach(t => { t.completed = false; t.completedAt = null; }));
             }
-            if (keepRewards) gameState.rewards100   = keepRewards;
-            if (keepPrizes)  gameState.prizeOptions = keepPrizes;
+            if (keepRewards)   gameState.rewards100        = keepRewards;
+            if (keepPrizes)    gameState.prizeOptions      = keepPrizes;
+            if (keepSchedule)  gameState.weeklySchedule    = keepSchedule;
+            if (keepShopping)  gameState.shoppingList      = keepShopping;
+            if (keepEvents)    gameState.datedEvents       = keepEvents;
+            if (keepOverrides) gameState.characterOverrides = keepOverrides;
             ensureGameDefaults();
         }
 
@@ -867,6 +962,11 @@
 
         window.onload = function() {
             loadGameState(); applyCharacterOverrides(); calculateAllScores(); renderAll(); updateEditButtons();
+            // אתחול הלו״ז: חודש נוכחי + רינדור ראשוני, ברירת מחדל = מסך המטלות
+            const _now = new Date();
+            calMonth = new Date(_now.getFullYear(), _now.getMonth(), 1);
+            renderSchedule(); renderMonth();
+            switchView('chores');
             // עדכון אחוזי טריות, דגימה, ובונוס שבועי — כל 5 דקות
             setInterval(() => { sampleRoomHistory(); decayTasks(); calculateAllScores(); renderAll(); }, 5 * 60 * 1000);
         }
@@ -1394,6 +1494,240 @@
                 s.style.setProperty('--x', `${(Math.random() - 0.5) * 100}px`); s.style.setProperty('--y', `${(Math.random() - 0.5) * 100}px`); s.style.setProperty('--r', `${Math.random() * 360}deg`);
                 document.body.appendChild(s); setTimeout(() => s.remove(), 1200);
             }
+        }
+
+        // ===================================================================
+        // ===== לו״ז משפחתי (שבועי + חודשי) + רשימת קניות =====
+        // ===================================================================
+        const DAY_NAMES  = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
+        const HEB_MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];
+        let scheduleSub = 'weekly';
+        let calMonth = null; // תאריך ראשון-בחודש המוצג; מאותחל ב-window.onload
+
+        // הימלטות תווים לפני הזרקה ל-innerHTML (תוכן textarea / תצוגת לוח)
+        function escapeHtml(s) {
+            return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // שמירה קלה ללא רינדור/סנכרון — שומרת על פוקוס/סמן בזמן הקלדה
+        function persistGame() {
+            localStorage.setItem("kingdom_of_order_save_v4", JSON.stringify(gameState));
+        }
+        let _persistTimer = null;
+        function persistGameDebounced() {
+            clearTimeout(_persistTimer);
+            _persistTimer = setTimeout(persistGame, 600);
+        }
+
+        // ===== מעבר בין מסכים =====
+        function switchView(name) {
+            const chores = document.getElementById("view-chores");
+            const sched  = document.getElementById("view-schedule");
+            const tabC = document.getElementById("tab-chores");
+            const tabS = document.getElementById("tab-schedule");
+            const activeCls = "py-2 px-5 bg-amber-500 text-white border border-amber-500 rounded-2xl text-sm font-bold shadow-sm transition-all";
+            const idleCls   = "py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all";
+            if (name === 'schedule') {
+                chores.classList.add("hidden");
+                sched.classList.remove("hidden");
+                tabS.className = activeCls; tabC.className = idleCls;
+                renderSchedule();
+                if (scheduleSub === 'monthly') renderMonth();
+            } else {
+                sched.classList.add("hidden");
+                chores.classList.remove("hidden");
+                tabC.className = activeCls; tabS.className = idleCls;
+            }
+        }
+
+        function switchScheduleSub(sub) {
+            scheduleSub = sub;
+            const w  = document.getElementById("sub-weekly");
+            const m  = document.getElementById("sub-monthly");
+            const tw = document.getElementById("subtab-weekly");
+            const tm = document.getElementById("subtab-monthly");
+            const activeCls = "py-1.5 px-4 bg-amber-500 text-white border border-amber-500 rounded-xl text-xs font-bold shadow-sm";
+            const idleCls   = "py-1.5 px-4 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm";
+            if (sub === 'monthly') {
+                w.classList.add("hidden"); m.classList.remove("hidden");
+                tm.className = activeCls; tw.className = idleCls;
+                renderMonth();
+            } else {
+                m.classList.add("hidden"); w.classList.remove("hidden");
+                tw.className = activeCls; tm.className = idleCls;
+                renderSchedule();
+            }
+        }
+
+        // ===== תצוגה שבועית =====
+        function renderSchedule() {
+            const thead = document.getElementById("schedule-thead");
+            const tbody = document.getElementById("schedule-tbody");
+            if (!thead || !tbody) return;
+            const ws = gameState.weeklySchedule || {};
+            const acts = ws.activities || {};
+            const dinners = ws.dinners || {};
+            const breakfasts = ws.breakfasts || {};
+
+            let head = `<tr><th class="p-2 text-center text-slate-400 font-bold">יום</th>`;
+            EDITABLE_CHARS.forEach(k => {
+                const c = CHARACTERS[k];
+                head += `<th class="p-2 text-center min-w-[110px]"><div class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-gradient-to-br ${c.color} ${c.text} font-bold text-[11px]">${c.emoji} ${escapeHtml(c.name)}</div></th>`;
+            });
+            head += `<th class="p-2 text-center min-w-[130px]"><div class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold text-[11px]">🍽️ ארוחת ערב</div></th></tr>`;
+            thead.innerHTML = head;
+
+            let rows = "";
+            for (let d = 0; d < 7; d++) {
+                rows += `<tr class="border-t border-slate-100">`;
+                rows += `<td class="p-2 font-bold text-slate-700 text-center align-top whitespace-nowrap">${DAY_NAMES[d]}</td>`;
+                EDITABLE_CHARS.forEach(k => {
+                    const val = (acts[d] && acts[d][k]) || "";
+                    rows += `<td class="p-1 align-top"><textarea rows="2" oninput="updateScheduleCell(${d},'${k}',this.value)" placeholder="—" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y">${escapeHtml(val)}</textarea></td>`;
+                });
+                if (d === 6) {
+                    const bVal = breakfasts[6] || "";
+                    const dVal = dinners[6] || "";
+                    rows += `<td class="p-1 align-top">
+                        <label class="block text-[9px] font-bold text-amber-600 mb-0.5">🥐 בוקר</label>
+                        <textarea rows="1" oninput="updateBreakfastCell(6,this.value)" placeholder="—" class="w-full bg-amber-50/70 border border-amber-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y mb-1.5">${escapeHtml(bVal)}</textarea>
+                        <label class="block text-[9px] font-bold text-rose-600 mb-0.5">🍽️ ערב</label>
+                        <textarea rows="1" oninput="updateDinnerCell(6,this.value)" placeholder="—" class="w-full bg-rose-50/60 border border-rose-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y">${escapeHtml(dVal)}</textarea>
+                    </td>`;
+                } else {
+                    const dVal = dinners[d] || "";
+                    rows += `<td class="p-1 align-top"><textarea rows="2" oninput="updateDinnerCell(${d},this.value)" placeholder="—" class="w-full bg-rose-50/50 border border-rose-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y">${escapeHtml(dVal)}</textarea></td>`;
+                }
+                rows += `</tr>`;
+            }
+            tbody.innerHTML = rows;
+            renderShoppingList();
+        }
+
+        function updateScheduleCell(day, charKey, value) {
+            if (!gameState.weeklySchedule.activities[day]) gameState.weeklySchedule.activities[day] = {};
+            gameState.weeklySchedule.activities[day][charKey] = value;
+            persistGameDebounced();
+        }
+        function updateDinnerCell(day, value) {
+            gameState.weeklySchedule.dinners[day] = value;
+            persistGameDebounced();
+        }
+        function updateBreakfastCell(day, value) {
+            if (!gameState.weeklySchedule.breakfasts) gameState.weeklySchedule.breakfasts = {};
+            gameState.weeklySchedule.breakfasts[day] = value;
+            persistGameDebounced();
+        }
+
+        // ===== תצוגה חודשית (לוח שנה) =====
+        function dateKey(d) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function renderMonth() {
+            if (!calMonth) { const n = new Date(); calMonth = new Date(n.getFullYear(), n.getMonth(), 1); }
+            const title = document.getElementById("month-title");
+            const namesRow = document.getElementById("month-daynames");
+            const grid = document.getElementById("month-grid");
+            if (!grid) return;
+
+            const year = calMonth.getFullYear();
+            const month = calMonth.getMonth();
+            title.innerText = `${HEB_MONTHS[month]} ${year}`;
+            namesRow.innerHTML = DAY_NAMES.map(n => `<div class="text-center text-[10px] font-bold text-slate-400 py-1">${n}</div>`).join("");
+
+            const startDay = new Date(year, month, 1).getDay();      // 0 = ראשון
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const todayKey = dateKey(new Date());
+            const events = gameState.datedEvents || {};
+
+            let cells = "";
+            for (let i = 0; i < startDay; i++) cells += `<div class="aspect-square"></div>`;
+            for (let day = 1; day <= daysInMonth; day++) {
+                const key = dateKey(new Date(year, month, day));
+                const ev = events[key] || "";
+                const isToday = key === todayKey;
+                const lines = ev ? ev.split("\n").filter(l => l.trim()) : [];
+                let preview = "";
+                lines.slice(0, 2).forEach(l => {
+                    preview += `<div class="text-[8px] leading-tight text-amber-800 bg-amber-50 rounded px-1 mb-0.5 truncate">${escapeHtml(l)}</div>`;
+                });
+                if (lines.length > 2) preview += `<div class="text-[8px] text-slate-400 px-1">+${lines.length - 2}</div>`;
+                cells += `<div onclick="openDateEditor('${key}')" class="aspect-square rounded-xl border p-1 cursor-pointer overflow-hidden flex flex-col transition-all ${isToday ? 'border-amber-400 bg-amber-50/60 ring-1 ring-amber-300' : 'border-slate-100 bg-white/60 hover:border-amber-200 hover:bg-amber-50/30'}">
+                    <div class="text-[10px] font-bold ${isToday ? 'text-amber-700' : 'text-slate-500'} mb-0.5">${day}</div>
+                    <div class="flex-1 overflow-hidden">${preview}</div>
+                </div>`;
+            }
+            grid.innerHTML = cells;
+        }
+
+        function monthPrev()  { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderMonth(); }
+        function monthNext()  { calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); renderMonth(); }
+        function monthToday() { const t = new Date(); calMonth = new Date(t.getFullYear(), t.getMonth(), 1); renderMonth(); }
+
+        // ===== עורך תאריך (אירוע חד-פעמי) =====
+        function openDateEditor(dateStr) {
+            document.getElementById("date-editor-key").value = dateStr;
+            const parts = dateStr.split("-");
+            document.getElementById("date-editor-title").innerText = `📅 ${parseInt(parts[2])} ב${HEB_MONTHS[parseInt(parts[1]) - 1]}`;
+            document.getElementById("date-editor-text").value = (gameState.datedEvents && gameState.datedEvents[dateStr]) || "";
+            document.getElementById("date-editor-modal").classList.remove("hidden");
+            setTimeout(() => document.getElementById("date-editor-text").focus(), 50);
+        }
+        function closeDateEditor() { document.getElementById("date-editor-modal").classList.add("hidden"); }
+        function saveDateEditor() {
+            const key = document.getElementById("date-editor-key").value;
+            const text = document.getElementById("date-editor-text").value.trim();
+            if (!gameState.datedEvents) gameState.datedEvents = {};
+            if (text) gameState.datedEvents[key] = text;
+            else delete gameState.datedEvents[key];
+            persistGame();
+            renderMonth();
+            closeDateEditor();
+        }
+
+        // ===== רשימת קניות =====
+        function renderShoppingList() {
+            const list = document.getElementById("shopping-list");
+            if (!list) return;
+            const items = gameState.shoppingList || [];
+            if (items.length === 0) {
+                list.innerHTML = `<p class="text-center text-slate-400 text-xs py-2">הרשימה ריקה — הוסיפו מצרך ראשון 🛒</p>`;
+                return;
+            }
+            list.innerHTML = items.map(it => `
+                <div class="flex items-center gap-2 bg-white/70 border border-slate-100 rounded-xl px-3 py-2">
+                    <button onclick="toggleShoppingItem('${it.id}')" class="w-5 h-5 shrink-0 rounded border flex items-center justify-center ${it.done ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white border-slate-300'}">${it.done ? '✓' : ''}</button>
+                    <span class="flex-1 text-sm ${it.done ? 'line-through text-slate-400' : 'text-slate-700'}">${escapeHtml(it.text)}</span>
+                    <button onclick="deleteShoppingItem('${it.id}')" class="text-rose-400 hover:text-rose-600 text-sm shrink-0">🗑️</button>
+                </div>`).join("");
+        }
+        function addShoppingItem() {
+            const input = document.getElementById("shopping-input");
+            const text = input.value.trim();
+            if (!text) return;
+            if (!gameState.shoppingList) gameState.shoppingList = [];
+            gameState.shoppingList.push({ id: "s" + Date.now(), text, done: false });
+            input.value = "";
+            persistGame();
+            renderShoppingList();
+        }
+        function toggleShoppingItem(id) {
+            const it = (gameState.shoppingList || []).find(x => x.id === id);
+            if (it) { it.done = !it.done; persistGame(); renderShoppingList(); }
+        }
+        function deleteShoppingItem(id) {
+            gameState.shoppingList = (gameState.shoppingList || []).filter(x => x.id !== id);
+            persistGame();
+            renderShoppingList();
+        }
+        function clearBoughtItems() {
+            gameState.shoppingList = (gameState.shoppingList || []).filter(x => !x.done);
+            persistGame();
+            renderShoppingList();
         }
 
         function showToast(title, message) {
