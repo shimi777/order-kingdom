@@ -413,6 +413,10 @@
         const DAILY_TASK_IDS = new Set([101, 102, 201, 202, 205, 301, 401, 402, 403, 404, 503]);
         const DAY_MS  = 24 * 60 * 60 * 1000;
         const WEEK_MS = 7 * DAY_MS;
+
+        // חדרים אישיים ובעליהם — לבונוס השבועי
+        const PERSONAL_ROOMS = { 1: "בכורה", 2: "ילד", 3: "הורים" };
+        const WEEKLY_BONUS_PTS = 20;
         let gameState = {};
 
         let GEMINI_API_KEY = "";
@@ -441,15 +445,44 @@
                     gameState.rooms.forEach(r => r.tasks.forEach(t => {
                         if (t.completedAt === undefined) t.completedAt = null;
                     }));
+                    if (!gameState.roomHistory)    gameState.roomHistory    = {};
+                    if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
                     // עדכון maxScore אם השתנה
                     gameState.maxScore = INITIAL_STATE.maxScore;
                     // איפוס משימות שפג תוקפן
                     decayTasks();
+                    sampleRoomHistory();
                 } catch(e) { resetToInitial(); }
             } else { resetToInitial(); }
         }
 
         function resetToInitial() { gameState = JSON.parse(JSON.stringify(INITIAL_STATE)); }
+
+        function sampleRoomHistory() {
+            const now = Date.now();
+            if (!gameState.roomHistory)    gameState.roomHistory    = {};
+            if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
+            Object.keys(PERSONAL_ROOMS).forEach(id => {
+                const roomId = parseInt(id);
+                const room = gameState.rooms.find(r => r.id === roomId);
+                if (!room) return;
+                if (!gameState.roomHistory[roomId]) gameState.roomHistory[roomId] = [];
+                const history = gameState.roomHistory[roomId];
+                const last = history[history.length - 1];
+                if (last && now - last.t < 60 * 60 * 1000) return; // max once/hour
+                history.push({ t: now, pct: getRoomFreshnessPct(room) });
+                // שמור רק 7 ימים אחורה
+                gameState.roomHistory[roomId] = history.filter(s => s.t > now - WEEK_MS);
+            });
+        }
+
+        function getWeekAvg(roomId) {
+            const history = gameState.roomHistory && gameState.roomHistory[roomId];
+            if (!history || history.length < 3) return null;
+            const recent = history.filter(s => s.t > Date.now() - WEEK_MS);
+            if (recent.length < 3) return null;
+            return Math.round(recent.reduce((sum, s) => sum + s.pct, 0) / recent.length);
+        }
 
         function decayTasks() {
             const now = Date.now();
@@ -471,6 +504,7 @@
         }
 
         function saveGameState(actionName = "עדכון כללי") {
+            sampleRoomHistory();
             localStorage.setItem("kingdom_of_order_save_v4", JSON.stringify(gameState));
             calculateAllScores();
             renderAll();
@@ -529,12 +563,33 @@
             });
             gameState.goodDeeds.forEach(deed => familyScore += deed.points);
             gameState.score = familyScore;
+
+            // בונוס שבועי: שמירה על ממוצע ≥70% בחדר האישי
+            const currentWeek = Math.floor(Date.now() / WEEK_MS);
+            Object.entries(PERSONAL_ROOMS).forEach(([id, char]) => {
+                const roomId = parseInt(id);
+                const lastBonusWeek = gameState.weeklyBonusLog && gameState.weeklyBonusLog[roomId];
+                // אם הבונוס כבר הוענק השבוע — פשוט הוסף לניקוד (כי אפסנו בתחילת הפונקציה)
+                if (lastBonusWeek === currentWeek) {
+                    gameState.personalScores[char] = (gameState.personalScores[char] || 0) + WEEKLY_BONUS_PTS;
+                    return;
+                }
+                // בדוק אם מגיע בונוס חדש
+                const avg = getWeekAvg(roomId);
+                if (avg !== null && avg >= 70) {
+                    if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
+                    gameState.weeklyBonusLog[roomId] = currentWeek;
+                    gameState.personalScores[char] = (gameState.personalScores[char] || 0) + WEEKLY_BONUS_PTS;
+                    const roomName = gameState.rooms.find(r => r.id === roomId)?.name || `חדר ${roomId}`;
+                    showToast(`🌟 בונוס שבועי ל${char}!`, `ממוצע ${avg}% בשבוע האחרון — +${WEEKLY_BONUS_PTS} נקודות אישיות!`);
+                }
+            });
         }
 
         window.onload = function() {
             loadGameState(); calculateAllScores(); renderAll();
-            // עדכון אחוזי טריות ודעיכת משימות כל 5 דקות
-            setInterval(() => { decayTasks(); calculateAllScores(); renderAll(); }, 5 * 60 * 1000);
+            // עדכון אחוזי טריות, דגימה, ובונוס שבועי — כל 5 דקות
+            setInterval(() => { sampleRoomHistory(); decayTasks(); calculateAllScores(); renderAll(); }, 5 * 60 * 1000);
         }
 
         async function fetchRoomImage(roomId, prompt) {
@@ -653,6 +708,7 @@
                         </div>
                     </div>
                     <div class="mt-1 text-xs font-bold text-slate-800 text-center">${room.name.split(' ').slice(1).join(' ')}</div>
+                    ${PERSONAL_ROOMS[room.id] ? (() => { const avg = getWeekAvg(room.id); const currentWeek = Math.floor(Date.now() / WEEK_MS); const bonusEarned = gameState.weeklyBonusLog && gameState.weeklyBonusLog[room.id] === currentWeek; return avg !== null ? `<div class="text-[9px] text-center mt-0.5 ${bonusEarned ? 'text-amber-500 font-bold' : 'text-slate-400'}">${bonusEarned ? '🌟' : '📊'} ממוצע שבועי: ${avg}%${bonusEarned ? ' +בונוס!' : ''}</div>` : ''; })() : ''}
                 `;
                 container.appendChild(card);
             });
