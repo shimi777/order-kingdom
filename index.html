@@ -268,6 +268,10 @@
                         <button onclick="openRewardModal(100)" class="flex-1 py-2.5 px-3 bg-white hover:bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-xl">🎁 בחר פרס 100%</button>
                         <button onclick="triggerResetConfirmation()" class="flex-1 py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs">♻️ איפוס שבועי</button>
                     </div>
+                    <button onclick="openFridayReveal()" class="relative w-full mt-3 py-2.5 px-3 bg-amber-400 hover:bg-amber-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all">
+                        🌟 חשיפת שישי — מי זכה בפרס הסודי?
+                        <span id="friday-badge" class="hidden absolute top-1 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white"></span>
+                    </button>
                 </div>
             </div>
 
@@ -290,6 +294,19 @@
             <h3 class="text-xl font-black text-amber-800 mb-4">🏆 יעד משפחתי (100%)</h3>
             <div id="modal-rewards-list" class="space-y-3"></div>
             <button onclick="closeRewardModal()" class="mt-4 w-full py-2 bg-slate-100 text-xs font-bold rounded-xl">סגור</button>
+        </div>
+    </div>
+
+    <div id="friday-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5">
+                <div>
+                    <h3 class="text-xl font-black text-amber-800">🌟 חשיפת שישי</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">מי שמר על החדר שלו נקי מעל 70% השבוע?</p>
+                </div>
+                <button onclick="closeFridayReveal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
+            </div>
+            <div id="friday-reveal-body" class="space-y-4"></div>
         </div>
     </div>
 
@@ -417,6 +434,14 @@
         // חדרים אישיים ובעליהם — לבונוס השבועי
         const PERSONAL_ROOMS = { 1: "בכורה", 2: "ילד", 3: "הורים" };
         const WEEKLY_BONUS_PTS = 20;
+
+        const PRIZE_OPTIONS = [
+            { id: "dj",     emoji: "🎵", label: "DJ הבית",           desc: "בוחרים מוזיקה ומנהלים את פלייליסט הבית — 30 דקות שלמות" },
+            { id: "game",   emoji: "🎲", label: "מנהל/ת המשחקים",    desc: "בוחרים משחק משפחתי ומחליטים את הכללים" },
+            { id: "outing", emoji: "🍦", label: "יציאה מיוחדת",      desc: "יציאה לשתייה או גלידה עם אמא או אבא לבד" },
+            { id: "remote", emoji: "📺", label: "שולט/ת בשלט",       desc: "בוחרים מה צופים הערב — ללא עוררין" },
+            { id: "points", emoji: "⭐", label: "20 נקודות לשבוע הבא", desc: "מעבירים את הזכייה לנקודות בונוס — שימושי לשבוע עמוס" },
+        ];
         let gameState = {};
 
         let GEMINI_API_KEY = "";
@@ -447,6 +472,12 @@
                     }));
                     if (!gameState.roomHistory)    gameState.roomHistory    = {};
                     if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
+                    if (!gameState.carryOverBonus) gameState.carryOverBonus = {};
+                    // migrate old weeklyBonusLog format (number → object)
+                    Object.keys(gameState.weeklyBonusLog).forEach(k => {
+                        if (typeof gameState.weeklyBonusLog[k] === 'number')
+                            gameState.weeklyBonusLog[k] = { week: gameState.weeklyBonusLog[k], avg: null, prize: null };
+                    });
                     // עדכון maxScore אם השתנה
                     gameState.maxScore = INITIAL_STATE.maxScore;
                     // איפוס משימות שפג תוקפן
@@ -482,6 +513,87 @@
             const recent = history.filter(s => s.t > Date.now() - WEEK_MS);
             if (recent.length < 3) return null;
             return Math.round(recent.reduce((sum, s) => sum + s.pct, 0) / recent.length);
+        }
+
+        function openFridayReveal()  { renderFridayReveal(); document.getElementById("friday-modal").classList.remove("hidden"); }
+        function closeFridayReveal() { document.getElementById("friday-modal").classList.add("hidden"); }
+
+        function claimWeeklyPrize(roomId, prizeId) {
+            const entry = gameState.weeklyBonusLog && gameState.weeklyBonusLog[roomId];
+            if (!entry || entry.prize) return;
+            entry.prize = prizeId;
+            if (prizeId === 'points') {
+                const char = PERSONAL_ROOMS[roomId];
+                if (!gameState.carryOverBonus) gameState.carryOverBonus = {};
+                gameState.carryOverBonus[char] = (gameState.carryOverBonus[char] || 0) + WEEKLY_BONUS_PTS;
+            }
+            saveGameState(`חשיפת שישי — בחירת פרס חדר ${roomId}`);
+            renderFridayReveal();
+            updateFridayBadge();
+        }
+
+        function updateFridayBadge() {
+            const currentWeek = Math.floor(Date.now() / WEEK_MS);
+            const hasUnclaimed = Object.entries(PERSONAL_ROOMS).some(([id]) => {
+                const entry = gameState.weeklyBonusLog && gameState.weeklyBonusLog[parseInt(id)];
+                return entry && entry.week === currentWeek && !entry.prize;
+            });
+            const badge = document.getElementById("friday-badge");
+            if (badge) badge.classList.toggle("hidden", !hasUnclaimed);
+        }
+
+        function renderFridayReveal() {
+            const currentWeek = Math.floor(Date.now() / WEEK_MS);
+            const body = document.getElementById("friday-reveal-body");
+            if (!body) return;
+            body.innerHTML = "";
+
+            Object.entries(PERSONAL_ROOMS).forEach(([id, char]) => {
+                const roomId = parseInt(id);
+                const c = CHARACTERS[char];
+                const entry = gameState.weeklyBonusLog && gameState.weeklyBonusLog[roomId];
+                const earned = entry && entry.week === currentWeek;
+                const claimed = earned && entry.prize;
+                const avg = getWeekAvg(roomId);
+
+                const card = document.createElement("div");
+                card.className = `rounded-2xl border p-4 ${earned ? 'bg-amber-50 border-amber-200' : 'bg-slate-50 border-slate-200'}`;
+
+                let inner = `
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="text-3xl">${c.emoji}</span>
+                        <div>
+                            <div class="font-extrabold text-sm text-slate-800">${c.name}</div>
+                            <div class="text-[10px] text-slate-400">${avg !== null ? `ממוצע שבועי: ${avg}%` : 'אין עדיין מספיק נתונים'}</div>
+                        </div>
+                        <div class="mr-auto text-right">
+                            ${earned ? '<span class="text-xs font-bold text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">🌟 זכאי/ת לפרס!</span>' : '<span class="text-xs text-slate-400">לא הגיע/ה ל-70%</span>'}
+                        </div>
+                    </div>`;
+
+                if (earned && !claimed) {
+                    inner += `<div class="grid grid-cols-1 gap-2">`;
+                    PRIZE_OPTIONS.forEach(p => {
+                        inner += `<button onclick="claimWeeklyPrize(${roomId}, '${p.id}')"
+                            class="flex items-center gap-3 w-full text-right p-2.5 rounded-xl bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 transition-all">
+                            <span class="text-2xl">${p.emoji}</span>
+                            <div><div class="text-xs font-bold text-slate-800">${p.label}</div><div class="text-[10px] text-slate-400">${p.desc}</div></div>
+                        </button>`;
+                    });
+                    inner += `</div>`;
+                } else if (claimed) {
+                    const prize = PRIZE_OPTIONS.find(p => p.id === entry.prize);
+                    inner += `<div class="flex items-center gap-3 bg-white rounded-xl p-3 border border-amber-200">
+                        <span class="text-2xl">${prize.emoji}</span>
+                        <div><div class="text-xs font-bold text-emerald-700">✅ נבחר: ${prize.label}</div><div class="text-[10px] text-slate-400">${prize.desc}</div></div>
+                    </div>`;
+                } else {
+                    inner += `<div class="text-[10px] text-slate-400 text-center py-1">יש להגיע לממוצע שבועי של 70% ומעלה כדי לזכות בפרס 🏅</div>`;
+                }
+
+                card.innerHTML = inner;
+                body.appendChild(card);
+            });
         }
 
         function decayTasks() {
@@ -564,22 +676,24 @@
             gameState.goodDeeds.forEach(deed => familyScore += deed.points);
             gameState.score = familyScore;
 
-            // בונוס שבועי: שמירה על ממוצע ≥70% בחדר האישי
+            // הוספת נקודות carry-over שנבחרו בחשיפת שישי
+            if (gameState.carryOverBonus) {
+                Object.entries(gameState.carryOverBonus).forEach(([char, pts]) => {
+                    if (gameState.personalScores[char] !== undefined) gameState.personalScores[char] += pts;
+                });
+            }
+
+            // רישום זכאות לבונוס שישי (ללא נקודות אוטומטיות — הזוכה בוחר בשישי)
             const currentWeek = Math.floor(Date.now() / WEEK_MS);
-            Object.entries(PERSONAL_ROOMS).forEach(([id, char]) => {
+            if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
+            Object.entries(PERSONAL_ROOMS).forEach(([id]) => {
                 const roomId = parseInt(id);
-                const lastBonusWeek = gameState.weeklyBonusLog && gameState.weeklyBonusLog[roomId];
-                // אם הבונוס כבר הוענק השבוע — פשוט הוסף לניקוד (כי אפסנו בתחילת הפונקציה)
-                if (lastBonusWeek === currentWeek) {
-                    gameState.personalScores[char] = (gameState.personalScores[char] || 0) + WEEKLY_BONUS_PTS;
-                    return;
-                }
-                // בדוק אם מגיע בונוס חדש
+                const entry = gameState.weeklyBonusLog[roomId];
+                const entryWeek = entry && (typeof entry === 'number' ? entry : entry.week);
+                if (entryWeek === currentWeek) return; // already logged this week
                 const avg = getWeekAvg(roomId);
                 if (avg !== null && avg >= 70) {
-                    if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
-                    gameState.weeklyBonusLog[roomId] = currentWeek;
-                    gameState.personalScores[char] = (gameState.personalScores[char] || 0) + WEEKLY_BONUS_PTS;
+                    gameState.weeklyBonusLog[roomId] = { week: currentWeek, avg, prize: null };
                 }
             });
         }
@@ -630,7 +744,7 @@
             renderRooms();
         }
 
-        function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderGoodDeeds(); updateProgressDOM(); }
+        function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderGoodDeeds(); updateProgressDOM(); updateFridayBadge(); }
 
         function renderHeroDashboards() {
             const container = document.getElementById("avatars-container");
