@@ -348,7 +348,10 @@
                     tasks: [
                         { id: 401, title: "פינוי וסדר שולחן המלכות", desc: "פינוי השולחן לאחר הארוחה במרחב המשותף", char: "כולם", points: 15, isFamily: true, completed: false },
                         { id: 402, title: "טקס הכלים והמדיח", desc: "העברת כלים לכיור ושטיפה/הכנסה למדיח", char: "בכורה", points: 20, isFamily: true, completed: false },
-                        { id: 403, title: "טיפוח וטאטוא המטבח והסלון המשותפים", desc: "טאטוא פירורי המטבח ושאיבה יסודית של הסלון המשפחתי", char: "ילד", points: 15, isFamily: true, completed: false }
+                        { id: 403, title: "טיפוח וטאטוא המטבח והסלון המשותפים", desc: "טאטוא פירורי המטבח ושאיבה יסודית של הסלון המשפחתי", char: "ילד", points: 15, isFamily: true, completed: false },
+                        { id: 404, title: "ריקון פח האשפה 🗑️", desc: "הוצאת שקית האשפה והחלפתה בשקית חדשה", char: "כולם", points: 15, isFamily: true, completed: false },
+                        { id: 405, title: "ריקון מחזור פלסטיק ♻️", desc: "איסוף הפלסטיק לשקית ייעודית והורדה לפח המחזור", char: "ילד", points: 15, isFamily: true, completed: false },
+                        { id: 406, title: "ריקון מחזור נייר ♻️", desc: "קיפול קרטונים ואיסוף נייר לשקית ייעודית והורדה לפח", char: "בכורה", points: 15, isFamily: true, completed: false }
                     ]
                 },
                 {
@@ -501,7 +504,6 @@
         }
 
         function regenerateAllImages() {
-            gameState.rooms.forEach(room => localStorage.removeItem(`room_img_cache_v3_${room.id}`));
             renderRooms();
         }
 
@@ -536,8 +538,10 @@
             return "👑 נקי ומבריק!";
         }
 
+        const BASE_URL = "https://shimi777.github.io/order-kingdom/";
         const STATIC_ROOM_IMAGES = {
-            1: "room_1.png", 2: "room_2.png", 3: "room_3.png", 4: "room_4.png", 5: "room_5.png"
+            1: BASE_URL + "room_1.png", 2: BASE_URL + "room_2.png", 3: BASE_URL + "room_3.png",
+            4: BASE_URL + "room_4.png", 5: BASE_URL + "room_5.png"
         };
 
         function renderRooms() {
