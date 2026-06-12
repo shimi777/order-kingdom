@@ -300,6 +300,11 @@
             <button id="subtab-monthly" onclick="switchScheduleSub('monthly')" class="py-1.5 px-4 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🗓️ חודשי</button>
         </div>
 
+        <div class="flex flex-col items-center gap-1">
+            <button onclick="syncScheduleToCalendar()" class="py-1.5 px-4 bg-emerald-500 hover:bg-emerald-600 text-white border border-emerald-500 rounded-xl text-xs font-bold shadow-sm flex items-center gap-1">🔄 סנכרן ליומן גוגל</button>
+            <span class="text-[10px] text-slate-400">שולח את הלו״ז והאירועים ליומן "ממלכת הסדר 📅" שלכם</span>
+        </div>
+
         <div id="sub-weekly">
             <div class="watercolor-card p-6">
                 <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4"><span class="text-2xl">📅</span> לו״ז שבועי</h3>
@@ -1728,6 +1733,43 @@
             gameState.shoppingList = (gameState.shoppingList || []).filter(x => !x.done);
             persistGame();
             renderShoppingList();
+        }
+
+        // ===== סנכרון הלו״ז ליומן גוגל (דרך אותו Apps Script Web App) =====
+        function buildCalendarPayload() {
+            const ws = gameState.weeklySchedule || {};
+            const acts = ws.activities || {}, dinners = ws.dinners || {}, breakfasts = ws.breakfasts || {};
+            const weekly = [];
+            for (let d = 0; d < 7; d++) {
+                EDITABLE_CHARS.forEach(k => {
+                    const t = ((acts[d] && acts[d][k]) || "").trim();
+                    if (t) weekly.push({ day: d, label: CHARACTERS[k].name, text: t });
+                });
+                if (d === 6) {
+                    const b = (breakfasts[6] || "").trim();
+                    if (b) weekly.push({ day: 6, label: "🥐 ארוחת בוקר", text: b });
+                }
+                const din = (dinners[d] || "").trim();
+                if (din) weekly.push({ day: d, label: "🍽️ ארוחת ערב", text: din });
+            }
+            return { type: "calendar", datedEvents: gameState.datedEvents || {}, weekly };
+        }
+
+        function syncScheduleToCalendar() {
+            if (!GOOGLE_SCRIPT_URL) {
+                showToast("⚠️ חסר קישור", "הגדירו תחילה את קישור ה-Web App של גוגל במסך הראשי.");
+                return;
+            }
+            showToast("🔄 שולח ליומן...", "מסנכרן את הלו״ז ליומן \"ממלכת הסדר\".");
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST", mode: "no-cors", cache: "no-cache",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(buildCalendarPayload())
+            }).then(() => {
+                showToast("📅 נשלח ליומן", "הלו״ז נשלח. בדקו ביומן גוגל \"ממלכת הסדר 📅\".");
+            }).catch(() => {
+                showToast("❌ שגיאה", "הסנכרון ליומן נכשל. בדקו את הקישור.");
+            });
         }
 
         function showToast(title, message) {
