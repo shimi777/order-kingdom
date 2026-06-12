@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ממלכת הסדר - משחק משימות משפחתי</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏰</text></svg>">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,6 +92,7 @@
 
     <div class="max-w-7xl mx-auto px-4 pt-3 flex justify-start gap-2">
         <button id="global-edit-btn" onclick="toggleGlobalEdit()" class="py-1.5 px-3 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">✏️ מצב עריכה (הורים)</button>
+        <button id="global-edit-chars-btn" onclick="openCharacterEditor()" class="hidden py-1.5 px-3 bg-white/80 hover:bg-white text-slate-500 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🎭 עריכת דמויות</button>
         <button id="global-edit-pw-btn" onclick="changeEditPassword()" class="hidden py-1.5 px-3 bg-white/80 hover:bg-white text-slate-500 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🔑 שינוי סיסמה</button>
     </div>
 
@@ -399,6 +402,21 @@
         </div>
     </div>
 
+    <div id="char-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-2">
+                <h3 class="text-xl font-black text-amber-800">🎭 עריכת דמויות</h3>
+                <button onclick="closeCharacterEditor()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">כל אחד יכול לבחור אווטאר ושם משלו 💫</p>
+            <div id="char-editor-body" class="space-y-3"></div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="saveCharacterEditor()" class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 שמירה</button>
+                <button onclick="closeCharacterEditor()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">ביטול</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification -->
     <div id="custom-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl px-5 py-3 flex items-start gap-3 min-w-64 max-w-xs transition-all duration-500 opacity-0 translate-y-20 pointer-events-none">
         <div class="text-xl mt-0.5">💬</div>
@@ -535,7 +553,7 @@
         // ניקוד מקסימלי = סכום כל המשימות המשפחתיות (מתעדכן אוטומטית בעריכה)
         function computeMaxScore() {
             let sum = 0;
-            gameState.rooms.forEach(r => r.tasks.forEach(t => { if (t.isFamily) sum += (t.points || 0); }));
+            gameState.rooms.forEach(r => r.tasks.forEach(t => { if (t.isFamily && !t.hidden) sum += (t.points || 0); }));
             return sum || 1;
         }
 
@@ -815,7 +833,7 @@
 
             gameState.rooms.forEach(room => {
                 room.tasks.forEach(task => {
-                    if (task.completed) {
+                    if (task.completed && !task.hidden) {
                         if (task.isFamily) familyScore += task.points;
                         else if (gameState.personalScores[task.char] !== undefined) gameState.personalScores[task.char] += task.points;
                     }
@@ -848,7 +866,7 @@
         }
 
         window.onload = function() {
-            loadGameState(); calculateAllScores(); renderAll(); updateEditButtons();
+            loadGameState(); applyCharacterOverrides(); calculateAllScores(); renderAll(); updateEditButtons();
             // עדכון אחוזי טריות, דגימה, ובונוס שבועי — כל 5 דקות
             setInterval(() => { sampleRoomHistory(); decayTasks(); calculateAllScores(); renderAll(); }, 5 * 60 * 1000);
         }
@@ -930,7 +948,7 @@
             if (!room.tasks || room.tasks.length === 0) return 0;
             const now = Date.now();
             let totalW = 0, freshW = 0;
-            room.tasks.forEach(t => {
+            room.tasks.filter(t => !t.hidden).forEach(t => {
                 const period = isDaily(t) ? DAY_MS : WEEK_MS;
                 let f = 0;
                 if (t.completed) {
@@ -984,21 +1002,28 @@
             document.getElementById("active-room-subtitle").innerText = activeRoom.subtitle;
             document.getElementById("active-room-rules").innerText = activeRoom.specialRules;
 
-            let tasksToRender = activeRoom.tasks;
-            if (gameState.selectedCharacter) tasksToRender = activeRoom.tasks.filter(t => t.char === gameState.selectedCharacter || t.char === "כולם");
+            // משימות מוסתרות מוצגות רק במצב עריכה
+            let tasksToRender = activeRoom.tasks.filter(t => editMode || !t.hidden);
+            if (gameState.selectedCharacter) tasksToRender = tasksToRender.filter(t => t.char === gameState.selectedCharacter || t.char === "כולם");
 
             tasksToRender.forEach(task => {
+                const ch = CHARACTERS[task.char];
+                const avatar = ch ? ch.emoji : "🏰";
                 const card = document.createElement("div");
-                card.className = `flex items-center justify-between p-3 rounded-2xl border ${task.completed ? 'bg-emerald-50/40 text-slate-400': 'bg-white'}`;
+                card.className = `flex items-center justify-between p-3 rounded-2xl border ${task.hidden ? 'bg-slate-100/70 opacity-60' : task.completed ? 'bg-emerald-50/40 text-slate-400': 'bg-white'}`;
                 const daily = isDaily(task);
                 const editControls = editMode ? `
                     <div class="flex flex-col gap-1">
                         <button onclick="openTaskEditor(${task.id})" class="w-7 h-7 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-xs flex items-center justify-center border border-amber-100" title="עריכה">✏️</button>
+                        <button onclick="toggleHideTask(${task.id})" class="w-7 h-7 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-500 text-xs flex items-center justify-center border border-slate-200" title="${task.hidden ? 'הצג' : 'הסתר'}">${task.hidden ? '👁️' : '🙈'}</button>
                         <button onclick="deleteTask(${task.id})" class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs flex items-center justify-center border border-rose-100" title="מחיקה">🗑️</button>
                     </div>` : "";
                 card.innerHTML = `
-                    <div class="flex items-center gap-3"><button onclick="toggleTask(${task.id}, event)" class="w-5 h-5 shrink-0 rounded border flex items-center justify-center bg-white ${task.completed ? 'bg-emerald-500 text-white':''}">${task.completed ? '✓':''}</button>
-                    <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[9px] text-slate-300 mt-0.5">${CHARACTERS[task.char] ? CHARACTERS[task.char].emoji + ' ' + CHARACTERS[task.char].name : task.char}</p></div></div>
+                    <div class="flex items-center gap-2.5">
+                        <button onclick="toggleTask(${task.id}, event)" class="w-5 h-5 shrink-0 rounded border flex items-center justify-center bg-white ${task.completed ? 'bg-emerald-500 text-white':''}">${task.completed ? '✓':''}</button>
+                        <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-lg ${ch ? 'bg-gradient-to-br '+ch.color : 'bg-slate-100'} border border-white shadow-sm" title="${ch ? ch.name : task.char}">${avatar}</div>
+                        <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title} ${task.hidden ? '<span class="text-[8px] text-slate-400">(מוסתרת)</span>' : ''}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[9px] text-slate-300 mt-0.5">${ch ? ch.name : task.char}</p></div>
+                    </div>
                     <div class="flex items-center gap-2">
                         <div class="flex flex-col items-end gap-1">
                             <span class="text-[9px] px-2 py-0.5 rounded font-bold border ${task.isFamily ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}">${task.isFamily ? '🏡 משפחתי' : '👤 אישי'} +${task.points}</span>
@@ -1016,7 +1041,8 @@
                 addBtn.innerText = "➕ הוסף משימה חדשה לחדר זה";
                 listContainer.appendChild(addBtn);
             }
-            document.getElementById("room-completed-count").innerText = `📌 הושלמו: ${activeRoom.tasks.filter(t => t.completed).length}/${activeRoom.tasks.length} משימות`;
+            const visible = activeRoom.tasks.filter(t => !t.hidden);
+            document.getElementById("room-completed-count").innerText = `📌 הושלמו: ${visible.filter(t => t.completed).length}/${visible.length} משימות`;
         }
 
         function toggleTask(taskId, event) {
@@ -1083,10 +1109,12 @@
                 btn.className = "py-1.5 px-3 bg-amber-500 text-white border border-amber-500 rounded-xl text-xs font-bold shadow-sm";
                 btn.innerText = "✅ סיום עריכה";
                 if (pwBtn) pwBtn.classList.remove("hidden");
+                const cb = document.getElementById("global-edit-chars-btn"); if (cb) cb.classList.remove("hidden");
             } else {
                 btn.className = "py-1.5 px-3 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm";
                 btn.innerText = "✏️ מצב עריכה (הורים)";
                 if (pwBtn) pwBtn.classList.add("hidden");
+                const cb = document.getElementById("global-edit-chars-btn"); if (cb) cb.classList.add("hidden");
             }
         }
 
@@ -1143,6 +1171,17 @@
             activeRoom.tasks = activeRoom.tasks.filter(x => x.id !== taskId);
             showToast("🗑️ המשימה נמחקה", `"${t.title}" הוסרה מהחדר.`);
             saveGameState(`מחיקת משימה בחדר ${activeRoom.name}`);
+        }
+
+        function toggleHideTask(taskId) {
+            const activeRoom = gameState.rooms.find(r => r.id === gameState.selectedRoomId);
+            if (!activeRoom) return;
+            const t = activeRoom.tasks.find(x => x.id === taskId);
+            if (!t) return;
+            t.hidden = !t.hidden;
+            if (t.hidden) { t.completed = false; t.completedAt = null; } // משימה מוסתרת לא משפיעה על הניקוד
+            showToast(t.hidden ? "🙈 המשימה הוסתרה" : "👁️ המשימה הוצגה", `"${t.title}" ${t.hidden ? 'לא תופיע לילדים' : 'חזרה לרשימה'}.`);
+            saveGameState(`הסתרת/הצגת משימה בחדר ${activeRoom.name}`);
         }
 
         // ===== עריכת פרסים =====
@@ -1209,6 +1248,77 @@
             showToast("🗑️ הפרס נמחק", `"${p.title || p.label}" הוסר.`);
             saveGameState("מחיקת פרס");
             if (target === 'rewards100') openRewardModal(100); else renderFridayReveal();
+        }
+
+        // ===== עריכת דמויות (אווטאר ושם) =====
+        const EDITABLE_CHARS = ["הורים", "בכורה", "ילד", "פעוטה"];
+        const AVATAR_CHOICES = ["👑","🛡️","🪄","🧚","🦸","🦸‍♀️","🧜‍♀️","🦄","🐉","🦁","🐯","🐼","🦊","🐱","🐶","🐰","🌟","⚡","🌈","🚀","🦖","🦋","🐢","🦉","🍭","🎨","⚽","🎮"];
+        let charEditStaging = {};
+
+        function applyCharacterOverrides() {
+            const ov = gameState.characterOverrides || {};
+            Object.keys(ov).forEach(k => {
+                if (CHARACTERS[k]) {
+                    if (ov[k].emoji) CHARACTERS[k].emoji = ov[k].emoji;
+                    if (ov[k].name)  CHARACTERS[k].name  = ov[k].name;
+                }
+            });
+        }
+
+        function openCharacterEditor() {
+            charEditStaging = {};
+            EDITABLE_CHARS.forEach(k => charEditStaging[k] = { emoji: CHARACTERS[k].emoji, name: CHARACTERS[k].name });
+            renderCharacterEditor();
+            document.getElementById("char-editor-modal").classList.remove("hidden");
+        }
+
+        function renderCharacterEditor() {
+            const body = document.getElementById("char-editor-body");
+            body.innerHTML = "";
+            EDITABLE_CHARS.forEach(k => {
+                const st = charEditStaging[k];
+                const c = CHARACTERS[k];
+                const grid = AVATAR_CHOICES.map(e =>
+                    `<button onclick="pickAvatar('${k}','${e}')" class="w-8 h-8 rounded-lg text-lg flex items-center justify-center ${st.emoji===e?'bg-amber-200 ring-2 ring-amber-400':'bg-slate-50 hover:bg-slate-100'}">${e}</button>`
+                ).join("");
+                const wrap = document.createElement("div");
+                wrap.className = "rounded-2xl border border-slate-200 p-3 bg-white";
+                wrap.innerHTML = `
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-gradient-to-br ${c.color} border border-white shadow-sm" id="char-preview-${k}">${st.emoji}</div>
+                        <div class="flex-1">
+                            <label class="block text-[10px] font-bold text-slate-400 mb-0.5">${c.role}</label>
+                            <input id="char-name-${k}" type="text" value="${st.name}" oninput="charEditStaging['${k}'].name=this.value" class="w-full bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-amber-300">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-8 gap-1">${grid}</div>
+                `;
+                body.appendChild(wrap);
+            });
+        }
+
+        function pickAvatar(k, e) {
+            charEditStaging[k].emoji = e;
+            const prev = document.getElementById("char-preview-" + k);
+            if (prev) prev.innerText = e;
+            renderCharacterEditor();
+        }
+
+        function closeCharacterEditor() { document.getElementById("char-editor-modal").classList.add("hidden"); }
+
+        function saveCharacterEditor() {
+            if (!gameState.characterOverrides) gameState.characterOverrides = {};
+            EDITABLE_CHARS.forEach(k => {
+                const st = charEditStaging[k];
+                const nameInput = document.getElementById("char-name-" + k);
+                const name = (nameInput && nameInput.value.trim()) || CHARACTERS[k].name;
+                CHARACTERS[k].emoji = st.emoji;
+                CHARACTERS[k].name  = name;
+                gameState.characterOverrides[k] = { emoji: st.emoji, name: name };
+            });
+            closeCharacterEditor();
+            saveGameState("עריכת דמויות");
+            showToast("🎭 הדמויות עודכנו", "האווטארים והשמות נשמרו.");
         }
 
         function renderGoodDeeds() {
