@@ -88,7 +88,12 @@
 </head>
 <body class="min-h-screen pb-12 text-slate-700">
 
-    <header class="max-w-7xl mx-auto px-4 pt-6 pb-2">
+    <div class="max-w-7xl mx-auto px-4 pt-3 flex justify-start gap-2">
+        <button id="global-edit-btn" onclick="toggleGlobalEdit()" class="py-1.5 px-3 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">✏️ מצב עריכה (הורים)</button>
+        <button id="global-edit-pw-btn" onclick="changeEditPassword()" class="hidden py-1.5 px-3 bg-white/80 hover:bg-white text-slate-500 border border-slate-200 rounded-xl text-xs font-bold shadow-sm">🔑 שינוי סיסמה</button>
+    </div>
+
+    <header class="max-w-7xl mx-auto px-4 pt-3 pb-2">
         <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-white/60 backdrop-blur-md border border-peach-200/40 rounded-3xl p-6 shadow-sm">
             <div class="flex items-center gap-4 text-center md:text-right">
                 <div class="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center text-4xl shadow-inner border border-amber-200 animate-pulse">
@@ -236,10 +241,7 @@
                         <span id="room-completed-count">📌 הושלמו: 0/4 משימות</span>
                         <span id="room-completion-pct" class="font-bold text-emerald-500">0%</span>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <button id="edit-mode-btn" onclick="toggleEditMode()" class="py-1 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-lg font-semibold">✏️ עריכת משימות</button>
-                        <button onclick="markAllRoomTasksCompleted()" class="py-1 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold">🌟 סמן הכל כנקי</button>
-                    </div>
+                    <button onclick="markAllRoomTasksCompleted()" class="py-1 px-3 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-semibold">🌟 סמן הכל כנקי</button>
                 </div>
             </div>
 
@@ -369,6 +371,34 @@
         </div>
     </div>
 
+    <div id="prize-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-5">
+                <h3 id="prize-editor-title" class="text-xl font-black text-amber-800">➕ פרס חדש</h3>
+                <button onclick="closePrizeEditor()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
+            </div>
+            <input type="hidden" id="prize-edit-id">
+            <div class="space-y-3">
+                <div id="prize-emoji-wrap">
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">אימוג'י</label>
+                    <input id="prize-edit-emoji" type="text" placeholder="🎁" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                </div>
+                <div>
+                    <label id="prize-title-label" class="block text-[11px] font-bold text-slate-500 mb-1">שם הפרס</label>
+                    <input id="prize-edit-title" type="text" placeholder="לדוגמה: ערב משחקים מיוחד 🎲" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">תיאור</label>
+                    <input id="prize-edit-desc" type="text" placeholder="פירוט קצר על הפרס" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="savePrizeEditor()" class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 שמירה</button>
+                <button onclick="closePrizeEditor()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">ביטול</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast notification -->
     <div id="custom-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white border border-slate-200 rounded-2xl shadow-xl px-5 py-3 flex items-start gap-3 min-w-64 max-w-xs transition-all duration-500 opacity-0 translate-y-20 pointer-events-none">
         <div class="text-xl mt-0.5">💬</div>
@@ -470,7 +500,7 @@
             goodDeeds: []
         };
 
-        const REWARDS_100 = [
+        const DEFAULT_REWARDS_100 = [
             { id: "cinema", title: "🎬 קולנוע ביתי מלכותי", desc: "הסלון הופך לאולם קולנוע עם פופקורן ביתי וסרט אהוב על כולם." },
             { id: "icecream", title: "🍦 שיירת הגלידה המתוקה", desc: "נסיעה מיוחדת עם פיג'מות בערב שבת לגלידריה האהובה!" }
         ];
@@ -513,12 +543,14 @@
         const PERSONAL_ROOMS = { 1: "בכורה", 2: "ילד", 3: "הורים" };
         const WEEKLY_BONUS_PTS = 20;
 
-        const PRIZE_OPTIONS = [
+        const DEFAULT_PRIZE_OPTIONS = [
             { id: "dj",     emoji: "🎵", label: "DJ הבית",           desc: "בוחרים מוזיקה ומנהלים את פלייליסט הבית — 30 דקות שלמות" },
             { id: "game",   emoji: "🎲", label: "מנהל/ת המשחקים",    desc: "בוחרים משחק משפחתי ומחליטים את הכללים" },
             { id: "outing", emoji: "🍦", label: "יציאה מיוחדת",      desc: "יציאה לשתייה או גלידה עם אמא או אבא לבד" },
-{ id: "points", emoji: "⭐", label: "20 נקודות לשבוע הבא", desc: "מעבירים את הזכייה לנקודות בונוס — שימושי לשבוע עמוס" },
+            { id: "points", emoji: "⭐", label: "20 נקודות לשבוע הבא", desc: "מעבירים את הזכייה לנקודות בונוס — שימושי לשבוע עמוס" },
         ];
+        // הפרס "points" מיוחד — מעביר נקודות לשבוע הבא; לא ניתן למחיקה כדי לשמור על המנגנון
+        const PROTECTED_PRIZE_ID = "points";
         let gameState = {};
 
         let GEMINI_API_KEY = "";
@@ -550,6 +582,7 @@
                     if (!gameState.roomHistory)    gameState.roomHistory    = {};
                     if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
                     if (!gameState.carryOverBonus) gameState.carryOverBonus = {};
+                    ensureGameDefaults();
                     // migrate old weeklyBonusLog format (number → object)
                     Object.keys(gameState.weeklyBonusLog).forEach(k => {
                         if (typeof gameState.weeklyBonusLog[k] === 'number')
@@ -564,7 +597,25 @@
             } else { resetToInitial(); }
         }
 
-        function resetToInitial() { gameState = JSON.parse(JSON.stringify(INITIAL_STATE)); }
+        function ensureGameDefaults() {
+            if (!gameState.rewards100)   gameState.rewards100   = JSON.parse(JSON.stringify(DEFAULT_REWARDS_100));
+            if (!gameState.prizeOptions) gameState.prizeOptions = JSON.parse(JSON.stringify(DEFAULT_PRIZE_OPTIONS));
+        }
+
+        // איפוס שבועי — שומר על המשימות והפרסים שההורים הגדירו, מאפס רק השלמות וניקוד
+        function resetToInitial() {
+            const keepRooms   = gameState.rooms;
+            const keepRewards = gameState.rewards100;
+            const keepPrizes  = gameState.prizeOptions;
+            gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
+            if (keepRooms) {
+                gameState.rooms = keepRooms;
+                gameState.rooms.forEach(r => r.tasks.forEach(t => { t.completed = false; t.completedAt = null; }));
+            }
+            if (keepRewards) gameState.rewards100   = keepRewards;
+            if (keepPrizes)  gameState.prizeOptions = keepPrizes;
+            ensureGameDefaults();
+        }
 
         function sampleRoomHistory() {
             const now = Date.now();
@@ -650,7 +701,7 @@
 
                 if (earned && !claimed) {
                     inner += `<div class="grid grid-cols-1 gap-2">`;
-                    PRIZE_OPTIONS.forEach(p => {
+                    (gameState.prizeOptions || []).forEach(p => {
                         inner += `<button onclick="claimWeeklyPrize(${roomId}, '${p.id}')"
                             class="flex items-center gap-3 w-full text-right p-2.5 rounded-xl bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 transition-all">
                             <span class="text-2xl">${p.emoji}</span>
@@ -659,10 +710,10 @@
                     });
                     inner += `</div>`;
                 } else if (claimed) {
-                    const prize = PRIZE_OPTIONS.find(p => p.id === entry.prize);
+                    const prize = (gameState.prizeOptions || []).find(p => p.id === entry.prize);
                     inner += `<div class="flex items-center gap-3 bg-white rounded-xl p-3 border border-amber-200">
-                        <span class="text-2xl">${prize.emoji}</span>
-                        <div><div class="text-xs font-bold text-emerald-700">✅ נבחר: ${prize.label}</div><div class="text-[10px] text-slate-400">${prize.desc}</div></div>
+                        <span class="text-2xl">${prize ? prize.emoji : '🎁'}</span>
+                        <div><div class="text-xs font-bold text-emerald-700">✅ נבחר: ${prize ? prize.label : 'פרס'}</div><div class="text-[10px] text-slate-400">${prize ? prize.desc : ''}</div></div>
                     </div>`;
                 } else {
                     inner += `<div class="text-[10px] text-slate-400 text-center py-1">יש להגיע לממוצע שבועי של 70% ומעלה כדי לזכות בפרס 🏅</div>`;
@@ -671,6 +722,26 @@
                 card.innerHTML = inner;
                 body.appendChild(card);
             });
+
+            // עריכת מאגר פרסי שישי (מצב עריכה בלבד)
+            if (editMode) {
+                const editBox = document.createElement("div");
+                editBox.className = "rounded-2xl border border-dashed border-amber-300 bg-amber-50/40 p-4";
+                let html = `<div class="text-xs font-bold text-amber-700 mb-2">⚙️ עריכת מאגר פרסי שישי</div><div class="space-y-2">`;
+                (gameState.prizeOptions || []).forEach(p => {
+                    const locked = p.id === PROTECTED_PRIZE_ID;
+                    html += `<div class="flex items-center justify-between gap-2 bg-white rounded-xl p-2 border border-slate-200">
+                        <div class="flex items-center gap-2"><span class="text-lg">${p.emoji}</span><span class="text-[11px] font-bold text-slate-700">${p.label}</span></div>
+                        <div class="flex gap-1">
+                            <button onclick="openPrizeEditor('prizeOptions','${p.id}')" class="w-6 h-6 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-600 text-[10px] flex items-center justify-center border border-amber-100">✏️</button>
+                            ${locked ? '' : `<button onclick="deletePrize('prizeOptions','${p.id}')" class="w-6 h-6 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] flex items-center justify-center border border-rose-100">🗑️</button>`}
+                        </div>
+                    </div>`;
+                });
+                html += `</div><button onclick="openPrizeEditor('prizeOptions', null)" class="w-full mt-2 py-2 rounded-xl border-2 border-dashed border-amber-300 text-amber-600 text-[11px] font-bold hover:bg-amber-50">➕ הוסף פרס שישי</button>`;
+                editBox.innerHTML = html;
+                body.appendChild(editBox);
+            }
         }
 
         function decayTasks() {
@@ -777,7 +848,7 @@
         }
 
         window.onload = function() {
-            loadGameState(); calculateAllScores(); renderAll();
+            loadGameState(); calculateAllScores(); renderAll(); updateEditButtons();
             // עדכון אחוזי טריות, דגימה, ובונוס שבועי — כל 5 דקות
             setInterval(() => { sampleRoomHistory(); decayTasks(); calculateAllScores(); renderAll(); }, 5 * 60 * 1000);
         }
@@ -968,20 +1039,55 @@
             }
         }
 
-        // ===== עריכת משימות =====
+        // ===== מצב עריכה גלובלי (מוגן בסיסמת הורים) =====
         let editMode = false;
+        const EDIT_PW_KEY = "kingdom_edit_password";
 
-        function toggleEditMode() {
-            editMode = !editMode;
-            const btn = document.getElementById("edit-mode-btn");
-            if (editMode) {
-                btn.className = "py-1 px-3 bg-amber-500 text-white border border-amber-500 rounded-lg font-semibold";
-                btn.innerText = "✅ סיום עריכה";
-            } else {
-                btn.className = "py-1 px-3 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-lg font-semibold";
-                btn.innerText = "✏️ עריכת משימות";
+        function requestEditAccess() {
+            const stored = localStorage.getItem(EDIT_PW_KEY);
+            if (!stored) {
+                const np = prompt("👑 הגדרת סיסמת הורים חדשה (תישמר במכשיר זה):");
+                if (np && np.trim()) { localStorage.setItem(EDIT_PW_KEY, np.trim()); showToast("🔑 סיסמה נשמרה", "מעכשיו רק עם הסיסמה אפשר לערוך."); return true; }
+                return false;
             }
+            const entered = prompt("🔒 הזינו סיסמת הורים כדי לערוך:");
+            if (entered === stored) return true;
+            if (entered !== null) showToast("❌ סיסמה שגויה", "אין הרשאת עריכה.");
+            return false;
+        }
+
+        function changeEditPassword() {
+            const stored = localStorage.getItem(EDIT_PW_KEY);
+            const cur = prompt("הזינו את הסיסמה הנוכחית:");
+            if (cur !== stored) { showToast("❌ סיסמה שגויה", "לא ניתן לשנות סיסמה."); return; }
+            const np = prompt("הזינו סיסמה חדשה:");
+            if (np && np.trim()) { localStorage.setItem(EDIT_PW_KEY, np.trim()); showToast("🔑 הסיסמה עודכנה", "הסיסמה החדשה נשמרה."); }
+        }
+
+        function toggleGlobalEdit() {
+            if (!editMode) {
+                if (!requestEditAccess()) return;
+                editMode = true;
+            } else {
+                editMode = false;
+            }
+            updateEditButtons();
             renderTasks();
+        }
+
+        function updateEditButtons() {
+            const btn = document.getElementById("global-edit-btn");
+            const pwBtn = document.getElementById("global-edit-pw-btn");
+            if (!btn) return;
+            if (editMode) {
+                btn.className = "py-1.5 px-3 bg-amber-500 text-white border border-amber-500 rounded-xl text-xs font-bold shadow-sm";
+                btn.innerText = "✅ סיום עריכה";
+                if (pwBtn) pwBtn.classList.remove("hidden");
+            } else {
+                btn.className = "py-1.5 px-3 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm";
+                btn.innerText = "✏️ מצב עריכה (הורים)";
+                if (pwBtn) pwBtn.classList.add("hidden");
+            }
         }
 
         function openTaskEditor(taskId) {
@@ -1039,6 +1145,72 @@
             saveGameState(`מחיקת משימה בחדר ${activeRoom.name}`);
         }
 
+        // ===== עריכת פרסים =====
+        let prizeEditTarget = null; // 'rewards100' | 'prizeOptions'
+
+        function openPrizeEditor(target, prizeId) {
+            prizeEditTarget = target;
+            const list = gameState[target] || [];
+            const prize = prizeId != null ? list.find(p => p.id === prizeId) : null;
+            const isReward = target === 'rewards100';
+            document.getElementById("prize-editor-title").innerText = prize
+                ? "✏️ עריכת פרס"
+                : (isReward ? "➕ פרס יעד 100% חדש" : "➕ פרס שישי חדש");
+            document.getElementById("prize-edit-id").value = prize ? prize.id : "";
+            // שדה אימוג'י רק לפרסי שישי
+            document.getElementById("prize-emoji-wrap").style.display = isReward ? "none" : "block";
+            document.getElementById("prize-edit-emoji").value = prize ? (prize.emoji || "") : "";
+            document.getElementById("prize-title-label").innerText = isReward ? "כותרת הפרס (כולל אימוג'י)" : "שם הפרס";
+            document.getElementById("prize-edit-title").value = prize ? (isReward ? prize.title : prize.label) : "";
+            document.getElementById("prize-edit-desc").value = prize ? prize.desc : "";
+            document.getElementById("prize-editor-modal").classList.remove("hidden");
+        }
+
+        function closePrizeEditor() { document.getElementById("prize-editor-modal").classList.add("hidden"); }
+
+        function savePrizeEditor() {
+            const target = prizeEditTarget;
+            if (!target) return;
+            const isReward = target === 'rewards100';
+            const idVal = document.getElementById("prize-edit-id").value;
+            const titleVal = document.getElementById("prize-edit-title").value.trim();
+            const descVal  = document.getElementById("prize-edit-desc").value.trim();
+            const emojiVal = document.getElementById("prize-edit-emoji").value.trim() || "🎁";
+            if (!titleVal) { showToast("⚠️ חסר שם", "יש להזין שם לפרס."); return; }
+            if (!gameState[target]) gameState[target] = [];
+            const list = gameState[target];
+
+            if (idVal) {
+                const p = list.find(x => x.id === idVal);
+                if (p) {
+                    p.desc = descVal;
+                    if (isReward) p.title = titleVal;
+                    else { p.label = titleVal; p.emoji = emojiVal; }
+                }
+                showToast("✏️ הפרס עודכן", `"${titleVal}" נשמר.`);
+            } else {
+                const newId = "px_" + Date.now();
+                if (isReward) list.push({ id: newId, title: titleVal, desc: descVal });
+                else          list.push({ id: newId, emoji: emojiVal, label: titleVal, desc: descVal });
+                showToast("➕ פרס נוסף", `"${titleVal}" נוסף לרשימה.`);
+            }
+            closePrizeEditor();
+            saveGameState("עריכת פרסים");
+            if (isReward) openRewardModal(100); else renderFridayReveal();
+        }
+
+        function deletePrize(target, prizeId) {
+            if (prizeId === PROTECTED_PRIZE_ID) { showToast("🔒 פרס מוגן", "לא ניתן למחוק את פרס העברת הנקודות."); return; }
+            const list = gameState[target] || [];
+            const p = list.find(x => x.id === prizeId);
+            if (!p) return;
+            if (!confirm(`למחוק את הפרס "${p.title || p.label}"?`)) return;
+            gameState[target] = list.filter(x => x.id !== prizeId);
+            showToast("🗑️ הפרס נמחק", `"${p.title || p.label}" הוסר.`);
+            saveGameState("מחיקת פרס");
+            if (target === 'rewards100') openRewardModal(100); else renderFridayReveal();
+        }
+
         function renderGoodDeeds() {
             const feed = document.getElementById("deeds-feed"); feed.innerHTML = "";
             if (gameState.goodDeeds.length === 0) { feed.innerHTML = `<p class="text-center text-slate-400 text-[11px]">אין מעשי חסד רשומים.</p>`; return; }
@@ -1063,7 +1235,7 @@
             if (maxEl) maxEl.innerText = gameState.maxScore;
             document.getElementById("percentage-text").innerText = `${finalPct}%`;
             if (gameState.selectedReward100) {
-                const found = REWARDS_100.find(r => r.id === gameState.selectedReward100);
+                const found = (gameState.rewards100 || []).find(r => r.id === gameState.selectedReward100);
                 document.getElementById("active-reward-display").innerText = found ? found.title : "טרם נבחר פרס לשבוע זה!";
             }
             if (GOOGLE_SCRIPT_URL) {
@@ -1075,12 +1247,31 @@
         function openRewardModal(target) {
             const modal = document.getElementById("reward-modal"); const list = document.getElementById("modal-rewards-list");
             list.innerHTML = ""; modal.classList.remove("hidden");
-            REWARDS_100.forEach(reward => {
-                const item = document.createElement("div"); item.className = "p-3 border rounded-xl bg-white hover:bg-slate-50 cursor-pointer text-right";
-                item.onclick = () => { gameState.selectedReward100 = reward.id; closeRewardModal(); saveGameState(`בחירת פרס: ${reward.title}`); };
-                item.innerHTML = `<h4 class="text-xs font-bold">${reward.title}</h4><p class="text-[10px] text-slate-400">${reward.desc}</p>`;
+            (gameState.rewards100 || []).forEach(reward => {
+                const item = document.createElement("div"); item.className = "p-3 border rounded-xl bg-white text-right flex items-center justify-between gap-2";
+                const info = document.createElement("div");
+                info.className = "flex-1 cursor-pointer";
+                info.onclick = () => { gameState.selectedReward100 = reward.id; closeRewardModal(); saveGameState(`בחירת פרס: ${reward.title}`); };
+                info.innerHTML = `<h4 class="text-xs font-bold">${reward.title}</h4><p class="text-[10px] text-slate-400">${reward.desc}</p>`;
+                item.appendChild(info);
+                if (editMode) {
+                    const ctr = document.createElement("div"); ctr.className = "flex flex-col gap-1";
+                    ctr.innerHTML = `
+                        <button onclick="openPrizeEditor('rewards100','${reward.id}')" class="w-7 h-7 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-xs flex items-center justify-center border border-amber-100">✏️</button>
+                        <button onclick="deletePrize('rewards100','${reward.id}')" class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs flex items-center justify-center border border-rose-100">🗑️</button>`;
+                    item.appendChild(ctr);
+                } else {
+                    item.className += " hover:bg-slate-50 cursor-pointer";
+                }
                 list.appendChild(item);
             });
+            if (editMode) {
+                const addBtn = document.createElement("button");
+                addBtn.onclick = () => openPrizeEditor('rewards100', null);
+                addBtn.className = "w-full py-2.5 rounded-xl border-2 border-dashed border-amber-300 text-amber-600 text-xs font-bold hover:bg-amber-50";
+                addBtn.innerText = "➕ הוסף פרס יעד 100%";
+                list.appendChild(addBtn);
+            }
         }
         function closeRewardModal() { document.getElementById("reward-modal").classList.add("hidden"); }
         function triggerResetConfirmation() { document.getElementById("confirm-modal").classList.remove("hidden"); }
