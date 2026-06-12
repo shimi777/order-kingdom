@@ -533,8 +533,8 @@
 
         window.onload = function() {
             loadGameState(); calculateAllScores(); renderAll();
-            // בדיקת דעיכת משימות כל 30 דקות
-            setInterval(() => { if (decayTasks()) { calculateAllScores(); renderAll(); } }, 30 * 60 * 1000);
+            // עדכון אחוזי טריות ודעיכת משימות כל 5 דקות
+            setInterval(() => { decayTasks(); calculateAllScores(); renderAll(); }, 5 * 60 * 1000);
         }
 
         async function fetchRoomImage(roomId, prompt) {
@@ -603,9 +603,27 @@
         function clearFilter() { gameState.selectedCharacter = null; saveGameState("ביטול סינון"); }
 
         function getCleanlinessStatus(pct) {
-            if (pct === 0) return "🥀 מחכה לקסם";
-            if (pct <= 50) return "🧹 בטיפול";
-            return "👑 נקי ומבריק!";
+            if (pct >= 90) return "✨ מבריק!";
+            if (pct >= 65) return "👑 נקי";
+            if (pct >= 35) return "🧹 בטיפול";
+            if (pct >  0)  return "🥀 זקוק לטיפוח";
+            return "🥀 מחכה לקסם";
+        }
+
+        function getRoomFreshnessPct(room) {
+            if (!room.tasks || room.tasks.length === 0) return 0;
+            const now = Date.now();
+            let totalW = 0, freshW = 0;
+            room.tasks.forEach(t => {
+                const period = DAILY_TASK_IDS.has(t.id) ? DAY_MS : WEEK_MS;
+                let f = 0;
+                if (t.completed) {
+                    f = t.completedAt ? Math.max(0, 1 - (now - t.completedAt) / period) : 1;
+                }
+                freshW += f * t.points;
+                totalW += t.points;
+            });
+            return totalW > 0 ? Math.round(freshW / totalW * 100) : 0;
         }
 
         const BASE_URL = "https://shimi777.github.io/order-kingdom/";
@@ -620,18 +638,21 @@
             if (!container) return; container.innerHTML = "";
             gameState.rooms.forEach(room => {
                 const isActive = gameState.selectedRoomId === room.id;
-                const totalTasks = room.tasks.length;
-                const comp = room.tasks.filter(t => t.completed).length;
-                const pct = totalTasks > 0 ? Math.round((comp / totalTasks) * 100) : 0;
+                const pct = getRoomFreshnessPct(room);
                 const card = document.createElement("div");
                 card.className = "room-medallion group cursor-pointer flex flex-col items-center transition-all";
                 card.onclick = () => { gameState.selectedRoomId = room.id; saveGameState(`מעבר לחדר ${room.name}`); };
                 card.innerHTML = `
                     <div class="room-image-container relative w-full aspect-square rounded-3xl overflow-hidden border-2 ${isActive ? 'border-amber-400 ring-4 ring-amber-200/50' : 'border-slate-200/40 bg-white'}">
                         <img id="room-img-${room.id}" class="w-full h-full object-cover" src="${STATIC_ROOM_IMAGES[room.id]}" style="background: ${GRADIENT_FALLBACKS[room.id]}" onerror="this.style.opacity='0.3'">
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><span class="text-4xl font-black text-white" style="text-shadow: 0 2px 8px rgba(0,0,0,0.7), 0 0 20px rgba(0,0,0,0.5)">${pct}%</span></div>
+                        <div class="absolute bottom-1 left-1.5 pointer-events-none">
+                            <span class="text-[10px] font-semibold text-white leading-tight" style="text-shadow:0 1px 4px rgba(0,0,0,0.9)">${room.icon} ${getCleanlinessStatus(pct)}</span>
+                        </div>
+                        <div class="absolute bottom-1 right-1.5 pointer-events-none">
+                            <span class="text-lg font-black text-white" style="text-shadow:0 2px 6px rgba(0,0,0,0.9)">${pct}%</span>
+                        </div>
                     </div>
-                    <div class="mt-1 text-xs font-bold text-slate-800 text-center">${room.icon} ${room.name.split(' ').slice(1).join(' ')}</div>
+                    <div class="mt-1 text-xs font-bold text-slate-800 text-center">${room.name.split(' ').slice(1).join(' ')}</div>
                 `;
                 container.appendChild(card);
             });
