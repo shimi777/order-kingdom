@@ -308,7 +308,10 @@
 
         <div id="sub-weekly">
             <div class="watercolor-card p-6">
-                <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4"><span class="text-2xl">📅</span> לו״ז שבועי</h3>
+                <div class="flex items-center justify-between gap-2 mb-2">
+                    <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2"><span class="text-2xl">📅</span> לו״ז שבועי</h3>
+                    <button onclick="openDinnerEditor()" class="py-1.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 rounded-xl text-xs font-bold whitespace-nowrap">🍽️ ערוך תפריט</button>
+                </div>
                 <p class="text-[11px] text-slate-400 mb-4">חוגים ופעילויות שחוזרים כל שבוע + מה אוכלים בערב. נשמר לתמיד ואינו מתאפס באיפוס השבועי.</p>
                 <div class="overflow-x-auto custom-scrollbar pb-2">
                     <table class="w-full border-collapse text-xs">
@@ -372,6 +375,22 @@
                 <button onclick="saveDateEditor()" class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 שמירה</button>
                 <button onclick="closeDateEditor()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">ביטול</button>
             </div>
+        </div>
+    </div>
+
+    <div id="dinner-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-black text-amber-800">🍽️ תפריט ארוחות ערב</h3>
+                <button onclick="closeDinnerEditor()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">הוסיפו או מחקו מנות. הן יופיעו ברשימה הנפתחת של ארוחת הערב בכל יום.</p>
+            <div class="flex gap-2 mb-4">
+                <input id="dinner-option-input" type="text" placeholder="הוסיפו מנה..." onkeydown="if(event.key==='Enter')addDinnerOption()" class="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                <button onclick="addDinnerOption()" class="py-2 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm whitespace-nowrap">➕ הוסף</button>
+            </div>
+            <div id="dinner-options-list" class="space-y-2"></div>
+            <button onclick="closeDinnerEditor()" class="w-full mt-5 py-2.5 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">סגור</button>
         </div>
     </div>
 
@@ -658,6 +677,10 @@
         ];
         // הפרס "points" מיוחד — מעביר נקודות לשבוע הבא; לא ניתן למחיקה כדי לשמור על המנגנון
         const PROTECTED_PRIZE_ID = "points";
+
+        // ערכי התחלה לרשימת ארוחות הערב (ניתנת לעריכה במסך הלו״ז)
+        const DEFAULT_DINNER_OPTIONS = ["פיצה", "פסטה", "סושי", "אורז עם שעועית", "ארוחת שאריות"];
+
         let gameState = {};
 
         let GEMINI_API_KEY = "";
@@ -724,6 +747,8 @@
             // ===== רשימת קניות ואירועים חודשיים =====
             if (!gameState.shoppingList) gameState.shoppingList = [];
             if (!gameState.datedEvents)  gameState.datedEvents  = {};
+            // ===== תפריט ארוחות ערב =====
+            if (!gameState.dinnerOptions) gameState.dinnerOptions = DEFAULT_DINNER_OPTIONS.slice();
         }
 
         // איפוס שבועי — שומר על המשימות והפרסים שההורים הגדירו, מאפס רק השלמות וניקוד
@@ -734,6 +759,7 @@
             const keepSchedule  = gameState.weeklySchedule;   // הלו״ז השבועי שורד איפוס
             const keepShopping  = gameState.shoppingList;     // רשימת הקניות שורדת איפוס
             const keepEvents    = gameState.datedEvents;      // אירועי הלוח החודשי שורדים איפוס
+            const keepDinnerOpts = gameState.dinnerOptions;   // תפריט ארוחות הערב שורד איפוס
             const keepOverrides = gameState.characterOverrides; // אווטארים/שמות שורדים איפוס
             gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
             if (keepRooms) {
@@ -745,6 +771,7 @@
             if (keepSchedule)  gameState.weeklySchedule    = keepSchedule;
             if (keepShopping)  gameState.shoppingList      = keepShopping;
             if (keepEvents)    gameState.datedEvents       = keepEvents;
+            if (keepDinnerOpts) gameState.dinnerOptions    = keepDinnerOpts;
             if (keepOverrides) gameState.characterOverrides = keepOverrides;
             ensureGameDefaults();
         }
@@ -1594,10 +1621,21 @@
             head += `<th class="p-2 text-center min-w-[130px]"><div class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-100 text-rose-700 font-bold text-[11px]">🍽️ ארוחת ערב</div></th></tr>`;
             thead.innerHTML = head;
 
+            // תאריכי השבוע הנוכחי (ראשון=0 ... שבת=6)
+            const today = new Date();
+            const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+            const todayK = dateKey(today);
+
             let rows = "";
             for (let d = 0; d < 7; d++) {
+                const cellDate = new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + d);
+                const dateLabel = cellDate.getDate() + "." + (cellDate.getMonth() + 1);
+                const isToday = dateKey(cellDate) === todayK;
                 rows += `<tr class="border-t border-slate-100">`;
-                rows += `<td class="p-2 font-bold text-slate-700 text-center align-top whitespace-nowrap">${DAY_NAMES[d]}</td>`;
+                rows += `<td class="p-2 text-center align-top whitespace-nowrap ${isToday ? 'bg-amber-50/60 rounded-xl' : ''}">
+                    <div class="font-bold text-slate-700">${DAY_NAMES[d]}</div>
+                    <div class="text-[10px] ${isToday ? 'text-amber-600 font-bold' : 'text-slate-400'}">${dateLabel}</div>
+                </td>`;
                 EDITABLE_CHARS.forEach(k => {
                     const val = (acts[d] && acts[d][k]) || "";
                     rows += `<td class="p-1 align-top"><textarea rows="2" oninput="updateScheduleCell(${d},'${k}',this.value)" placeholder="—" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y">${escapeHtml(val)}</textarea></td>`;
@@ -1609,16 +1647,32 @@
                         <label class="block text-[9px] font-bold text-amber-600 mb-0.5">🥐 בוקר</label>
                         <textarea rows="1" oninput="updateBreakfastCell(6,this.value)" placeholder="—" class="w-full bg-amber-50/70 border border-amber-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y mb-1.5">${escapeHtml(bVal)}</textarea>
                         <label class="block text-[9px] font-bold text-rose-600 mb-0.5">🍽️ ערב</label>
-                        <textarea rows="1" oninput="updateDinnerCell(6,this.value)" placeholder="—" class="w-full bg-rose-50/60 border border-rose-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y">${escapeHtml(dVal)}</textarea>
+                        <select onchange="updateDinnerCell(6,this.value)" class="w-full bg-rose-50/60 border border-rose-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300">${dinnerOptionsHtml(dVal)}</select>
                     </td>`;
                 } else {
                     const dVal = dinners[d] || "";
-                    rows += `<td class="p-1 align-top"><textarea rows="2" oninput="updateDinnerCell(${d},this.value)" placeholder="—" class="w-full bg-rose-50/50 border border-rose-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300 resize-y">${escapeHtml(dVal)}</textarea></td>`;
+                    rows += `<td class="p-1 align-top"><select onchange="updateDinnerCell(${d},this.value)" class="w-full bg-rose-50/50 border border-rose-100 rounded-xl py-1.5 px-2 text-xs focus:outline-none focus:border-amber-300">${dinnerOptionsHtml(dVal)}</select></td>`;
                 }
                 rows += `</tr>`;
             }
             tbody.innerHTML = rows;
             renderShoppingList();
+        }
+
+        // בונה את ה-<option>-ים לרשימת ארוחות הערב (כולל ערך נבחר שאינו ברשימה)
+        function dinnerOptionsHtml(selected) {
+            const opts = (gameState.dinnerOptions || []).slice();
+            let html = `<option value="">—</option>`;
+            if (selected && opts.indexOf(selected) === -1) {
+                html += `<option value="${escapeAttr(selected)}" selected>${escapeHtml(selected)}</option>`;
+            }
+            opts.forEach(o => {
+                html += `<option value="${escapeAttr(o)}"${o === selected ? ' selected' : ''}>${escapeHtml(o)}</option>`;
+            });
+            return html;
+        }
+        function escapeAttr(s) {
+            return String(s).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
         }
 
         function updateScheduleCell(day, charKey, value) {
@@ -1628,7 +1682,40 @@
         }
         function updateDinnerCell(day, value) {
             gameState.weeklySchedule.dinners[day] = value;
-            persistGameDebounced();
+            persistGame();
+        }
+
+        // ===== ניהול תפריט ארוחות הערב (רשימה נפתחת שניתן לערוך) =====
+        function openDinnerEditor() { renderDinnerEditor(); document.getElementById("dinner-editor-modal").classList.remove("hidden"); }
+        function closeDinnerEditor() { document.getElementById("dinner-editor-modal").classList.add("hidden"); }
+        function renderDinnerEditor() {
+            const list = document.getElementById("dinner-options-list");
+            const opts = gameState.dinnerOptions || [];
+            if (!opts.length) { list.innerHTML = `<p class="text-center text-slate-400 text-xs py-2">הרשימה ריקה — הוסיפו מנה.</p>`; return; }
+            list.innerHTML = opts.map((o, i) => `
+                <div class="flex items-center gap-2 bg-white/70 border border-slate-100 rounded-xl px-3 py-2">
+                    <span class="flex-1 text-sm text-slate-700">🍽️ ${escapeHtml(o)}</span>
+                    <button onclick="deleteDinnerOption(${i})" class="text-rose-400 hover:text-rose-600 text-sm shrink-0">🗑️</button>
+                </div>`).join("");
+        }
+        function addDinnerOption() {
+            const input = document.getElementById("dinner-option-input");
+            const val = input.value.trim();
+            if (!val) return;
+            if (!gameState.dinnerOptions) gameState.dinnerOptions = [];
+            if (gameState.dinnerOptions.indexOf(val) !== -1) { showToast("כבר קיים", `"${val}" כבר בתפריט.`); input.value = ""; return; }
+            gameState.dinnerOptions.push(val);
+            input.value = "";
+            persistGame();
+            renderDinnerEditor();
+            renderSchedule();
+        }
+        function deleteDinnerOption(idx) {
+            if (!gameState.dinnerOptions) return;
+            gameState.dinnerOptions.splice(idx, 1);
+            persistGame();
+            renderDinnerEditor();
+            renderSchedule();
         }
         function updateBreakfastCell(day, value) {
             if (!gameState.weeklySchedule.breakfasts) gameState.weeklySchedule.breakfasts = {};
