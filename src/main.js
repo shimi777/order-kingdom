@@ -16,6 +16,7 @@ import * as sync from './sync.js';
 import * as rooms from './rooms.js';
 import * as cloud from './cloud.js';
 import { renderDailySaying } from './daily-saying.js';
+import { renderReminder, enableReminders } from './reminders.js';
 
 // ---- Window exposure: every identifier reachable from an inline handler ----
 Object.assign(window, {
@@ -36,6 +37,8 @@ Object.assign(window, {
     setPersonalGoal: tasks.setPersonalGoal,
     // render.js
     switchView: render.switchView,
+    // reminders.js
+    enableReminders: enableReminders,
     // rooms.js
     clearFilter: rooms.clearFilter,
     submitGoodDeed: rooms.submitGoodDeed,
@@ -95,13 +98,14 @@ function init() {
     state.calculateAllScores();
     render.renderAll();
     render.updateEditButtons();
+    renderReminder();     // 🔔 תזכורת יומית (אחרי טעינת המצב)
     // חודש נוכחי + רינדור ראשוני של הלו״ז (היה inline ב-window.onload)
     schedule.initSchedule();
     const _gcalName = localStorage.getItem("kingdom_gcal_name");
     if (_gcalName) document.getElementById("gcal-name-input").value = _gcalName;
     render.switchView('chores');
     // עדכון אחוזי טריות, דגימה, ובונוס שבועי — כל 5 דקות
-    setInterval(() => { state.sampleRoomHistory(); state.decayTasks(); state.calculateAllScores(); render.renderAll(); renderDailySaying(); }, 5 * 60 * 1000);
+    setInterval(() => { state.sampleRoomHistory(); state.decayTasks(); state.calculateAllScores(); render.renderAll(); renderDailySaying(); renderReminder(); }, 5 * 60 * 1000);
 
     // ☁️ סנכרון ענן: בקשת סיסמת משפחה, טעינת המצב המשותף, והאזנה לשינויים ממכשירים אחרים.
     cloud.bootstrap({ getLocalState: state.getGameState, onRemote: applyRemoteState });
@@ -116,6 +120,7 @@ function applyRemoteState(remoteState) {
     schedule.renderSchedule();
     schedule.renderMonth();
     schedule.renderShoppingList();
+    renderReminder();
 }
 
 // Module scripts are deferred, so the DOM is parsed by the time this runs.
