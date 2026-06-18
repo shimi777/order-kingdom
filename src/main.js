@@ -124,3 +124,10 @@ if (document.readyState === 'loading') {
 } else {
     init();
 }
+
+// ☁️📲 רישום ה-Service Worker — מאפשר התקנה למסך הבית, עבודה אופליין, והתראות.
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW registration failed', e));
+    });
+}
