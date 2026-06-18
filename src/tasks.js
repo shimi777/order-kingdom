@@ -6,17 +6,48 @@
 // ===================================================================
 
 import { CHARACTERS, EDIT_PW_KEY, EDITABLE_CHARS, AVATAR_CHOICES } from './constants.js';
-import { gameState, saveGameState, isDaily, nextTaskId } from './state.js';
+import { gameState, saveGameState, isDaily, nextTaskId, getRoomFreshnessPct } from './state.js';
 import { showToast, updateEditButtons, renderTasks, renderGoodDeeds, createSparkles } from './render.js';
 
 export function toggleTask(taskId, event) {
-    let t = null;
-    gameState.rooms.forEach(r => { r.tasks.forEach(tk => { if(tk.id === taskId) t = tk; })});
-    if (t) {
-        t.completed = !t.completed;
-        t.completedAt = t.completed ? Date.now() : null;
-        createSparkles(event.clientX, event.clientY);
-        saveGameState(`משימה: ${t.title} שונתה`);
+    let t = null, room = null;
+    gameState.rooms.forEach(r => r.tasks.forEach(tk => { if (tk.id === taskId) { t = tk; room = r; } }));
+    if (!t) return;
+    t.completed = !t.completed;
+    t.completedAt = t.completed ? Date.now() : null;
+    if (event && t.completed) createSparkles(event.clientX, event.clientY);
+    if (t.completed) {
+        celebrateCompletion(t, room);
+    } else {
+        saveGameState(`משימה: ${t.title} בוטלה`);
+    }
+}
+
+// משוב מסוגלות (לא "תשלום" יבש): אומר לילד כמה החדר נקי עכשיו, ומדגיש שיא אישי.
+// בנוסף — תגמול משתנה: לפעמים "קוסם הסדר" שולח כוכב הפתעה (delight, לא נקודות).
+function celebrateCompletion(t, room) {
+    const pct = getRoomFreshnessPct(room);
+    if (!gameState.roomBest) gameState.roomBest = {};
+    const prevBest = gameState.roomBest[room.id] || 0;
+    const isRecord = pct > prevBest && pct > 0;
+    if (isRecord) gameState.roomBest[room.id] = pct;
+
+    const roomName = room.name.split(' ').slice(1).join(' ') || room.name;
+    let title, msg;
+    if (pct >= 100)      { title = "👑 חדר מושלם!"; msg = `${roomName} נקי ב-100%! עבודה מלכותית.`; }
+    else if (isRecord)   { title = "🏆 שיא חדש!";   msg = `${roomName} עכשיו ${pct}% נקי — הכי גבוה שהיה!`; }
+    else                 { title = "✨ כל הכבוד!";  msg = `${roomName} עכשיו ${pct}% נקי.`; }
+
+    const surprise = Math.random() < 0.18;
+    if (surprise) gameState.surpriseStars = (gameState.surpriseStars || 0) + 1;
+
+    saveGameState(`השלמת משימה: ${t.title}`);
+    showToast(title, msg);
+    if (surprise) {
+        setTimeout(() => {
+            showToast("🎁 כוכב הפתעה!", `קוסם הסדר התרשם — אספת ${gameState.surpriseStars} כוכבי הפתעה ✨`);
+            createSparkles(window.innerWidth / 2, window.innerHeight * 0.35);
+        }, 1400);
     }
 }
 

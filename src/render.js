@@ -39,6 +39,18 @@ export function getCleanlinessStatus(pct) {
     return "🥀 מחכה לקסם";
 }
 
+// "הטירה מתבהרת" — ככל שהטריות עולה, תמונת החדר בהירה ורוויה יותר.
+// משוב מסוגלות חזותי: ניקיון = אור וחיים, הזנחה = חושך ואפרוריות.
+export function freshnessFilter(pct) {
+    const bright = (0.5 + 0.55 * pct / 100).toFixed(2);  // 0.50 → 1.05
+    const sat    = (0.3 + 0.9  * pct / 100).toFixed(2);  // 0.30 → 1.20
+    return `brightness(${bright}) saturate(${sat})`;
+}
+// אטימות שכבת ה"אבק" הכהה מעל החדר (גבוהה בטריות נמוכה, מתפוגגת בנקי)
+export function dustOpacity(pct) {
+    return ((100 - pct) / 100 * 0.5).toFixed(2);          // 0.50 → 0.00
+}
+
 export function renderRooms() {
     const container = document.getElementById("rooms-map-grid");
     if (!container) return; container.innerHTML = "";
@@ -49,8 +61,9 @@ export function renderRooms() {
         card.className = "room-medallion group cursor-pointer flex flex-col items-center transition-all";
         card.onclick = () => { gameState.selectedRoomId = room.id; saveGameState(`מעבר לחדר ${room.name}`); };
         card.innerHTML = `
-            <div class="room-image-container relative w-full aspect-square rounded-3xl overflow-hidden border-2 ${isActive ? 'border-amber-400 ring-4 ring-amber-200/50' : 'border-slate-200/40 bg-white'}">
-                <img id="room-img-${room.id}" class="w-full h-full object-cover" src="${STATIC_ROOM_IMAGES[room.id]}" style="background: ${GRADIENT_FALLBACKS[room.id]}" onerror="this.style.opacity='0.3'">
+            <div class="room-image-container relative w-full aspect-square rounded-3xl overflow-hidden border-2 ${isActive ? 'border-amber-400 ring-4 ring-amber-200/50' : 'border-slate-200/40 bg-white'}${pct >= 90 ? ' ring-2 ring-emerald-300/70' : ''}">
+                <img id="room-img-${room.id}" class="w-full h-full object-cover transition-all duration-700" src="${STATIC_ROOM_IMAGES[room.id]}" style="background: ${GRADIENT_FALLBACKS[room.id]}; filter:${freshnessFilter(pct)}" onerror="this.style.opacity='0.3'">
+                <div class="absolute inset-0 pointer-events-none transition-all duration-700" style="background:#0f172a; opacity:${dustOpacity(pct)}"></div>
                 <div class="absolute bottom-1 left-1.5 pointer-events-none">
                     <span class="text-[10px] font-semibold text-white leading-tight" style="text-shadow:0 1px 4px rgba(0,0,0,0.9)">${room.icon} ${getCleanlinessStatus(pct)}</span>
                 </div>
@@ -92,7 +105,7 @@ export function renderTasks() {
             </div>` : "";
         card.innerHTML = `
             <div class="flex items-center gap-2.5">
-                <button onclick="toggleTask(${task.id}, event)" class="w-5 h-5 shrink-0 rounded border flex items-center justify-center ${task.completed ? 'bg-emerald-500 text-white border-emerald-500':'bg-white border-slate-300'}">${task.completed ? '✓':''}</button>
+                <button onclick="toggleTask(${task.id}, event)" class="w-9 h-9 shrink-0 rounded-xl border-2 text-lg flex items-center justify-center transition-all active:scale-90 ${task.completed ? 'bg-emerald-500 text-white border-emerald-500':'bg-white border-slate-300 hover:border-emerald-300'}">${task.completed ? '✓':''}</button>
                 <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-lg ${ch ? 'bg-gradient-to-br '+ch.color : 'bg-slate-100'} border border-white shadow-sm" title="${ch ? ch.name : task.char}">${avatar}</div>
                 <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title} ${task.hidden ? '<span class="text-[8px] text-slate-400">(מוסתרת)</span>' : ''}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[9px] text-slate-300 mt-0.5">${ch ? ch.name : task.char}</p></div>
             </div>
