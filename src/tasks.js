@@ -121,7 +121,7 @@ export function openTaskEditor(taskId) {
     document.getElementById("task-edit-id").value     = task ? task.id : "";
     document.getElementById("task-edit-title").value  = task ? task.title : "";
     document.getElementById("task-edit-desc").value   = task ? task.desc : "";
-    document.getElementById("task-edit-char").value   = task ? task.char : "כולם";
+    document.getElementById("task-edit-char").value   = task ? (task.rotate ? "__rotate__" : task.char) : "כולם";
     document.getElementById("task-edit-points").value = task ? task.points : 10;
     document.getElementById("task-edit-family").value = task ? String(!!task.isFamily) : "false";
     document.getElementById("task-edit-freq").value   = task ? (isDaily(task) ? "daily" : "weekly") : "weekly";
@@ -134,7 +134,9 @@ export function saveTaskEditor() {
     const idVal  = document.getElementById("task-edit-id").value;
     const title  = document.getElementById("task-edit-title").value.trim();
     const desc   = document.getElementById("task-edit-desc").value.trim();
-    const char   = document.getElementById("task-edit-char").value;
+    const charSel = document.getElementById("task-edit-char").value;
+    const isRotate = charSel === "__rotate__";
+    const char = isRotate ? "כולם" : charSel;   // סבב: דמות בפועל נקבעת שבועית ב-effectiveChar
     const points = Math.max(1, parseInt(document.getElementById("task-edit-points").value) || 1);
     const isFamily = document.getElementById("task-edit-family").value === "true";
     const freq   = document.getElementById("task-edit-freq").value;
@@ -147,11 +149,11 @@ export function saveTaskEditor() {
     if (idVal) {
         // עריכת משימה קיימת
         const t = activeRoom.tasks.find(x => x.id === parseInt(idVal));
-        if (t) { t.title = title; t.desc = desc; t.char = char; t.points = points; t.isFamily = isFamily; t.freq = freq; }
+        if (t) { t.title = title; t.desc = desc; t.char = char; t.rotate = isRotate; t.points = points; t.isFamily = isFamily; t.freq = freq; }
         showToast("✏️ המשימה עודכנה", `"${title}" נשמרה בהצלחה.`);
     } else {
         // משימה חדשה
-        activeRoom.tasks.push({ id: nextTaskId(), title, desc, char, points, isFamily, freq, completed: false, completedAt: null });
+        activeRoom.tasks.push({ id: nextTaskId(), title, desc, char, rotate: isRotate, points, isFamily, freq, completed: false, completedAt: null });
         showToast("➕ משימה נוספה", `"${title}" נוספה לחדר ${activeRoom.name}.`);
     }
     closeTaskEditor();

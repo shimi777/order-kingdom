@@ -6,7 +6,7 @@
 
 import {
     INITIAL_STATE, DEFAULT_REWARDS_100, DEFAULT_PRIZE_OPTIONS, DEFAULT_DINNER_OPTIONS,
-    DAILY_TASK_IDS, DAY_MS, WEEK_MS, PERSONAL_ROOMS, EDITABLE_CHARS, config
+    DAILY_TASK_IDS, DAY_MS, WEEK_MS, PERSONAL_ROOMS, EDITABLE_CHARS, ROTATION_CHARS, config
 } from './constants.js';
 // Runtime-only cross-module calls (safe cycles): render + sync.
 import { renderAll, updateProgressDOM, showToast } from './render.js';
@@ -21,6 +21,13 @@ export function isDaily(task) {
     if (task.freq === 'weekly') return false;
     return DAILY_TASK_IDS.has(task.id);
 }
+// הדמות המשובצת למשימה כרגע — לסבב שבועי מתחלף בין ROTATION_CHARS לפי מספר השבוע.
+export function effectiveChar(task) {
+    if (!task.rotate) return task.char;
+    const wk = Math.floor(Date.now() / WEEK_MS);
+    return ROTATION_CHARS[wk % ROTATION_CHARS.length];
+}
+
 // מזהה פנוי למשימה חדשה
 export function nextTaskId() {
     let max = 0;
@@ -218,7 +225,7 @@ export function calculateAllScores() {
         room.tasks.forEach(task => {
             if (task.completed && !task.hidden) {
                 if (task.isFamily) familyScore += task.points;
-                else if (gameState.personalScores[task.char] !== undefined) gameState.personalScores[task.char] += task.points;
+                else { const ch = effectiveChar(task); if (gameState.personalScores[ch] !== undefined) gameState.personalScores[ch] += task.points; }
             }
         });
     });

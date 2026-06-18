@@ -3,7 +3,7 @@
 // ===================================================================
 
 import { CHARACTERS, GRADIENT_FALLBACKS, STATIC_ROOM_IMAGES, EDITABLE_CHARS, config } from './constants.js';
-import { gameState, saveGameState, getRoomFreshnessPct, isDaily } from './state.js';
+import { gameState, saveGameState, getRoomFreshnessPct, isDaily, effectiveChar } from './state.js';
 import { editMode, openTaskEditor } from './tasks.js';
 import { renderSchedule, renderMonth, scheduleSub } from './schedule.js';
 import { updateFridayBadge } from './prizes.js';
@@ -108,10 +108,11 @@ export function renderTasks() {
 
     // משימות מוסתרות מוצגות רק במצב עריכה
     let tasksToRender = activeRoom.tasks.filter(t => editMode || !t.hidden);
-    if (gameState.selectedCharacter) tasksToRender = tasksToRender.filter(t => t.char === gameState.selectedCharacter || t.char === "כולם");
+    if (gameState.selectedCharacter) tasksToRender = tasksToRender.filter(t => effectiveChar(t) === gameState.selectedCharacter || effectiveChar(t) === "כולם");
 
     tasksToRender.forEach(task => {
-        const ch = CHARACTERS[task.char];
+        const assignedChar = effectiveChar(task);
+        const ch = CHARACTERS[assignedChar];
         const avatar = ch ? ch.emoji : "🏰";
         const card = document.createElement("div");
         card.className = `flex items-center justify-between p-3 rounded-2xl border ${task.hidden ? 'bg-slate-100/70 opacity-60' : task.completed ? 'bg-emerald-50/40 text-slate-400': 'bg-white'}`;
@@ -125,13 +126,14 @@ export function renderTasks() {
         card.innerHTML = `
             <div class="flex items-center gap-2.5">
                 <button onclick="toggleTask(${task.id}, event)" class="w-9 h-9 shrink-0 rounded-xl border-2 text-lg flex items-center justify-center transition-all active:scale-90 ${task.completed ? 'bg-emerald-500 text-white border-emerald-500':'bg-white border-slate-300 hover:border-emerald-300'}">${task.completed ? '✓':''}</button>
-                <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-lg ${ch ? 'bg-gradient-to-br '+ch.color : 'bg-slate-100'} border border-white shadow-sm" title="${ch ? ch.name : task.char}">${avatar}</div>
-                <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title} ${task.hidden ? '<span class="text-[8px] text-slate-400">(מוסתרת)</span>' : ''}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[9px] text-slate-300 mt-0.5">${ch ? ch.name : task.char}</p></div>
+                <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-lg ${ch ? 'bg-gradient-to-br '+ch.color : 'bg-slate-100'} border border-white shadow-sm" title="${ch ? ch.name : assignedChar}">${avatar}</div>
+                <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title} ${task.hidden ? '<span class="text-[8px] text-slate-400">(מוסתרת)</span>' : ''}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[9px] text-slate-300 mt-0.5">${ch ? ch.name : assignedChar}${task.rotate ? ' · 🔄 השבוע' : ''}</p></div>
             </div>
             <div class="flex items-center gap-2">
                 <div class="flex flex-col items-end gap-1">
                     <span class="text-[9px] px-2 py-0.5 rounded font-bold border ${task.isFamily ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600'}">${task.isFamily ? '🏡 משפחתי' : '👤 אישי'} +${task.points}</span>
                     <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${daily ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}">${daily ? '☀️ יומי' : '📅 שבועי'}</span>
+                    ${task.rotate ? '<span class="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-purple-50 text-purple-600">🔄 סבב</span>' : ''}
                 </div>
                 ${editControls}
             </div>
