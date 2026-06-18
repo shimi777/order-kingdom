@@ -7,6 +7,7 @@
 
 import { gameState, isDaily } from './state.js';
 import { showToast } from './render.js';
+import { subscribePush } from './push.js';
 
 const TONES = {
     amber:   'from-amber-100 to-amber-50 border-amber-200 text-amber-800',
@@ -86,6 +87,7 @@ export function enableReminders() {
         if (perm === 'granted') {
             showToast('🔔 תזכורות הופעלו', 'נשלח לכם תזכורת עדינה כשיש משימות פתוחות.');
             localStorage.removeItem('kingdom_last_notif'); // allow today's reminder now
+            subscribePush(); // רישום לדחיפה (פעיל רק אם הוגדר vapidPublicKey)
         } else {
             showToast('🔕 ההתראות בוטלו', 'אפשר להפעיל שוב בכל עת מהכפתור בראש המסך.');
         }

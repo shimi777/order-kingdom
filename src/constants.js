@@ -159,4 +159,7 @@ export const config = {
     // ההגנה היא ב-Row Level Security + סיסמת המשפחה, לא בהסתרת המפתח.
     cloudUrl: "https://wtsslpwpuqosxkgqyhpr.supabase.co",
     cloudKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind0c3NscHdwdXFvc3hrZ3F5aHByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDYwNzEsImV4cCI6MjA5NzM4MjA3MX0.iDT9sf_RwEjpIQ2eYPicreSoULL_jijDlDlAu1aG7PI",
+    // מפתח VAPID ציבורי לדחיפת התראות (אופציונלי) — ראו supabase/push/README.md.
+    // ריק = התראות דחיפה כבויות (התזכורות בתוך האפליקציה עדיין עובדות).
+    vapidPublicKey: "",
 };

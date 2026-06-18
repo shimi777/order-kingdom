@@ -77,6 +77,12 @@ export async function cloudVersion() {
     return await rpc('kingdom_version', { p_pass: _pass });
 }
 
+// רישום מנוי Web-Push לשרת (משתמש בסיסמה הקיימת). דורש את ערכת supabase/push.
+export async function savePushSubscription(sub) {
+    if (!_pass || !cloudConfigured()) return;
+    return rpc('save_push_sub', { p_pass: _pass, p_sub: sub });
+}
+
 // Debounced, fire-and-forget push of the latest state. Coalesces the
 // rapid save+persist bursts the app produces into a single round-trip.
 let _pushTimer = null, _pendingState = null;
