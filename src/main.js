@@ -33,6 +33,7 @@ Object.assign(window, {
     toggleHideTask: tasks.toggleHideTask,
     toggleTask: tasks.toggleTask,
     markAllRoomTasksCompleted: tasks.markAllRoomTasksCompleted,
+    setPersonalGoal: tasks.setPersonalGoal,
     // render.js
     switchView: render.switchView,
     // rooms.js

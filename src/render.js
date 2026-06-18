@@ -13,18 +13,37 @@ export function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks
 export function renderHeroDashboards() {
     const container = document.getElementById("avatars-container");
     container.innerHTML = "";
+    const goals = gameState.personalGoals || {};
     EDITABLE_CHARS.forEach(key => {
         const c = CHARACTERS[key];
         const isSelected = gameState.selectedCharacter === key;
+        const score = gameState.personalScores[key] || 0;
+        const goal = goals[key] || 0;
+        const reached = goal > 0 && score >= goal;
+        const goalPct = goal > 0 ? Math.min(Math.round(score / goal * 100), 100) : 0;
         const card = document.createElement("div");
-        card.className = `cursor-pointer p-3.5 rounded-2xl border transition-all flex items-center justify-between ${isSelected ? `bg-gradient-to-br ${c.color} border-amber-300 scale-[1.02]` : "bg-white/70 border-slate-100"}`;
+        card.className = `cursor-pointer p-3.5 rounded-2xl border transition-all flex flex-col gap-2 ${isSelected ? `bg-gradient-to-br ${c.color} border-amber-300 scale-[1.02]` : "bg-white/70 border-slate-100"}`;
         card.onclick = () => { gameState.selectedCharacter = isSelected ? null : key; saveGameState("סינון גיבורים"); };
+        // יעד אישי (אוטונומיה): כל ילד קובע לעצמו יעד נקודות שבועי, עם פס התקדמות.
+        const goalRow = goal > 0 ? `
+            <div class="w-full">
+                <div class="flex items-center justify-between text-[9px] font-bold mb-0.5">
+                    <span class="text-slate-500">🎯 יעד שבועי: ${score}/${goal}</span>
+                    <button onclick="event.stopPropagation(); setPersonalGoal('${key}')" class="text-slate-300 hover:text-slate-500 text-[11px]">✏️</button>
+                </div>
+                <div class="h-2 rounded-full bg-slate-200 overflow-hidden"><div class="h-full ${reached ? 'bg-emerald-500' : 'bg-indigo-400'} transition-all" style="width:${goalPct}%"></div></div>
+                ${reached ? '<div class="text-[9px] font-bold text-emerald-600 mt-0.5">✅ הגעת ליעד! כל הכבוד 🎉</div>' : ''}
+            </div>` : `
+            <button onclick="event.stopPropagation(); setPersonalGoal('${key}')" class="w-full text-[9px] text-slate-400 hover:text-indigo-500 font-semibold py-1 border border-dashed border-slate-200 hover:border-indigo-200 rounded-lg transition-all">🎯 קבע יעד אישי לשבוע</button>`;
         card.innerHTML = `
-            <div class="flex items-center gap-3">
-                <div class="text-3xl">${c.emoji}</div>
-                <div><div class="font-extrabold text-sm text-slate-800">${c.name}</div><div class="text-[10px] text-slate-400">${c.role}</div></div>
+            <div class="flex items-center justify-between w-full">
+                <div class="flex items-center gap-3">
+                    <div class="text-3xl">${c.emoji}</div>
+                    <div><div class="font-extrabold text-sm text-slate-800">${c.name}</div><div class="text-[10px] text-slate-400">${c.role}</div></div>
+                </div>
+                <div class="bg-white/90 px-3 py-1 rounded-xl text-left border"><span class="block text-[8px] text-slate-400 font-bold">נקודות אישיות</span><span class="text-xs font-black text-indigo-600">${score} ✨</span></div>
             </div>
-            <div class="bg-white/90 px-3 py-1 rounded-xl text-left border"><span class="block text-[8px] text-slate-400 font-bold">נקודות אישיות</span><span class="text-xs font-black text-indigo-600">${gameState.personalScores[key] || 0} ✨</span></div>
+            ${goalRow}
         `;
         container.appendChild(card);
     });

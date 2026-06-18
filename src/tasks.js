@@ -51,6 +51,24 @@ function celebrateCompletion(t, room) {
     }
 }
 
+// יעד אישי שבועי לכל ילד (אוטונומיה). ריק/0 = ביטול היעד.
+export function setPersonalGoal(char) {
+    const name = (CHARACTERS[char] && CHARACTERS[char].name) || char;
+    const cur = (gameState.personalGoals && gameState.personalGoals[char]) || "";
+    const val = prompt(`🎯 מהו יעד הנקודות האישי של ${name} לשבוע?\n(השאירו ריק כדי לבטל את היעד)`, cur);
+    if (val === null) return;
+    if (!gameState.personalGoals) gameState.personalGoals = {};
+    const n = parseInt(val);
+    if (!val.trim() || isNaN(n) || n <= 0) {
+        delete gameState.personalGoals[char];
+        showToast("🎯 היעד בוטל", `אין כרגע יעד אישי ל${name}.`);
+    } else {
+        gameState.personalGoals[char] = n;
+        showToast("🎯 יעד נקבע!", `${name}: יעד של ${n} נקודות השבוע. אפשר לעשות את זה! 💪`);
+    }
+    saveGameState("עדכון יעד אישי");
+}
+
 export function markAllRoomTasksCompleted() {
     const activeRoom = gameState.rooms.find(r => r.id === gameState.selectedRoomId);
     if (activeRoom) {
