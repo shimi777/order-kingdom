@@ -11,6 +11,7 @@ import {
 // Runtime-only cross-module calls (safe cycles): render + sync.
 import { renderAll, updateProgressDOM, showToast } from './render.js';
 import { syncToGoogleDrive } from './sync.js';
+import { cloudPush } from './cloud.js';
 
 export let gameState = {};
 
@@ -48,31 +49,51 @@ export function loadGameState() {
     if (savedState) {
         try {
             gameState = JSON.parse(savedState);
-            // מיזוג חדרים חדשים שנוספו מאז השמירה האחרונה
-            const savedRoomIds = new Set(gameState.rooms.map(r => r.id));
-            INITIAL_STATE.rooms.forEach(room => {
-                if (!savedRoomIds.has(room.id)) gameState.rooms.push(JSON.parse(JSON.stringify(room)));
-            });
-            // הוספת שדות חסרים למשימות קיימות (תאימות לאחור)
-            gameState.rooms.forEach(r => r.tasks.forEach(t => {
-                if (t.completedAt === undefined) t.completedAt = null;
-            }));
-            if (!gameState.roomHistory)    gameState.roomHistory    = {};
-            if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
-            if (!gameState.carryOverBonus) gameState.carryOverBonus = {};
-            ensureGameDefaults();
-            // migrate old weeklyBonusLog format (number → object)
-            Object.keys(gameState.weeklyBonusLog).forEach(k => {
-                if (typeof gameState.weeklyBonusLog[k] === 'number')
-                    gameState.weeklyBonusLog[k] = { week: gameState.weeklyBonusLog[k], avg: null, prize: null };
-            });
-            // עדכון maxScore אם השתנה
-            gameState.maxScore = INITIAL_STATE.maxScore;
-            // איפוס משימות שפג תוקפן
-            decayTasks();
-            sampleRoomHistory();
+            migrateLoadedState();
         } catch(e) { resetToInitial(); }
     } else { resetToInitial(); }
+}
+
+// נורמליזציה/תאימות-לאחור של אובייקט gameState שהוטען (מ-localStorage או מהענן)
+function migrateLoadedState() {
+    // מיזוג חדרים חדשים שנוספו מאז השמירה האחרונה
+    const savedRoomIds = new Set(gameState.rooms.map(r => r.id));
+    INITIAL_STATE.rooms.forEach(room => {
+        if (!savedRoomIds.has(room.id)) gameState.rooms.push(JSON.parse(JSON.stringify(room)));
+    });
+    // הוספת שדות חסרים למשימות קיימות (תאימות לאחור)
+    gameState.rooms.forEach(r => r.tasks.forEach(t => {
+        if (t.completedAt === undefined) t.completedAt = null;
+    }));
+    if (!gameState.roomHistory)    gameState.roomHistory    = {};
+    if (!gameState.weeklyBonusLog) gameState.weeklyBonusLog = {};
+    if (!gameState.carryOverBonus) gameState.carryOverBonus = {};
+    ensureGameDefaults();
+    // migrate old weeklyBonusLog format (number → object)
+    Object.keys(gameState.weeklyBonusLog).forEach(k => {
+        if (typeof gameState.weeklyBonusLog[k] === 'number')
+            gameState.weeklyBonusLog[k] = { week: gameState.weeklyBonusLog[k], avg: null, prize: null };
+    });
+    // עדכון maxScore אם השתנה
+    gameState.maxScore = INITIAL_STATE.maxScore;
+    // איפוס משימות שפג תוקפן
+    decayTasks();
+    sampleRoomHistory();
+}
+
+// קריאת המצב הנוכחי (לזריעת הענן בהפעלה ראשונה)
+export function getGameState() { return gameState; }
+
+// החלת מצב שהתקבל ממכשיר אחר דרך הענן. שומר ל-cache המקומי ומחשב ניקוד.
+// הרינדור מתבצע ע"י הקורא (main.js). לא דוחף חזרה לענן (כדי למנוע לולאה).
+export function ingestRemoteState(obj) {
+    try {
+        gameState = obj;
+        migrateLoadedState();
+        localStorage.setItem("kingdom_of_order_save_v4", JSON.stringify(gameState));
+        calculateAllScores();
+        return true;
+    } catch (e) { return false; }
 }
 
 export function ensureGameDefaults() {
@@ -175,6 +196,7 @@ export function saveGameState(actionName = "עדכון כללי") {
     calculateAllScores();
     renderAll();
     syncToGoogleDrive(actionName, true);
+    cloudPush(gameState);   // ☁️ סנכרון משותף בין מכשירי המשפחה
 }
 
 export function saveScriptUrl() {
@@ -245,6 +267,7 @@ export function getRoomFreshnessPct(room) {
 // שמירה קלה ללא רינדור/סנכרון — שומרת על פוקוס/סמן בזמן הקלדה
 export function persistGame() {
     localStorage.setItem("kingdom_of_order_save_v4", JSON.stringify(gameState));
+    cloudPush(gameState);   // ☁️ סנכרון משותף (עריכות לו״ז/קניות וכו')
 }
 let _persistTimer = null;
 export function persistGameDebounced() {

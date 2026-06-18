@@ -14,6 +14,7 @@ import * as schedule from './schedule.js';
 import * as prizes from './prizes.js';
 import * as sync from './sync.js';
 import * as rooms from './rooms.js';
+import * as cloud from './cloud.js';
 import { renderDailySaying } from './daily-saying.js';
 
 // ---- Window exposure: every identifier reachable from an inline handler ----
@@ -100,6 +101,20 @@ function init() {
     render.switchView('chores');
     // עדכון אחוזי טריות, דגימה, ובונוס שבועי — כל 5 דקות
     setInterval(() => { state.sampleRoomHistory(); state.decayTasks(); state.calculateAllScores(); render.renderAll(); renderDailySaying(); }, 5 * 60 * 1000);
+
+    // ☁️ סנכרון ענן: בקשת סיסמת משפחה, טעינת המצב המשותף, והאזנה לשינויים ממכשירים אחרים.
+    cloud.bootstrap({ getLocalState: state.getGameState, onRemote: applyRemoteState });
+}
+
+// החלת מצב שהתקבל ממכשיר אחר ורענון כל המסכים.
+function applyRemoteState(remoteState) {
+    if (!state.ingestRemoteState(remoteState)) return;
+    tasks.applyCharacterOverrides();
+    render.renderAll();
+    render.updateEditButtons();
+    schedule.renderSchedule();
+    schedule.renderMonth();
+    schedule.renderShoppingList();
 }
 
 // Module scripts are deferred, so the DOM is parsed by the time this runs.
