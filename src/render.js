@@ -143,7 +143,7 @@ export function renderTasks() {
             <div class="flex items-center gap-2.5">
                 <button onclick="toggleTask(${task.id}, event)" class="w-9 h-9 shrink-0 rounded-xl border-2 text-lg flex items-center justify-center transition-all active:scale-90 ${task.completed ? 'bg-emerald-500 text-white border-emerald-500':'bg-white border-slate-300 hover:border-emerald-300'}">${task.completed ? '✓':''}</button>
                 <div class="w-9 h-9 shrink-0 rounded-full flex items-center justify-center text-lg ${ch ? 'bg-gradient-to-br '+ch.color : 'bg-slate-100'} border border-white shadow-sm" title="${ch ? ch.name : assignedChar}">${avatar}</div>
-                <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title} ${task.hidden ? '<span class="text-[8px] text-slate-400">(מוסתרת)</span>' : ''}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[9px] text-slate-300 mt-0.5">${ch ? ch.name : assignedChar}${task.rotate ? ' · 🔄 השבוע' : ''}</p></div>
+                <div><h4 class="font-bold text-xs ${task.completed ? 'line-through':''}">${task.title} ${task.hidden ? '<span class="text-[8px] text-slate-400">(מוסתרת)</span>' : ''}</h4><p class="text-[10px] text-slate-400">${task.desc}</p><p class="text-[11px] font-semibold text-slate-500 mt-0.5">${ch ? ch.name : assignedChar}${task.rotate ? ' · 🔄 השבוע' : ''}</p></div>
             </div>
             <div class="flex items-center gap-2">
                 <div class="flex flex-col items-end gap-1">

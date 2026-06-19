@@ -59,12 +59,13 @@ export function renderReminder() {
     if (!el) return;
     const r = buildReminder();
 
-    let bell = '';
+    let bell = '', hint = '';
     if ('Notification' in window && Notification.permission !== 'granted') {
-        bell = `<button onclick="enableReminders()" class="shrink-0 text-[10px] bg-white/70 hover:bg-white border border-white/80 rounded-lg px-2 py-1 transition-all">🔔 הפעל תזכורות</button>`;
+        bell = `<button onclick="enableReminders()" class="shrink-0 text-[11px] bg-white/70 hover:bg-white border border-white/80 rounded-lg px-2.5 py-1.5 transition-all">🔔 הפעל תזכורות</button>`;
+        hint = `<div class="text-[10px] font-normal opacity-75 mt-1.5">💡 צריך להפעיל תזכורות בנפרד בכל מכשיר (טלפון/טאבלט) שרוצים לקבל בו התראות.</div>`;
     }
-    el.className = `rounded-2xl border bg-gradient-to-br ${TONES[r.tone]} px-4 py-3 text-sm font-bold flex items-center gap-3 shadow-sm`;
-    el.innerHTML = `<span class="flex-1">${r.html}</span>${bell}`;
+    el.className = `rounded-2xl border bg-gradient-to-br ${TONES[r.tone]} px-4 py-3 text-sm font-bold flex flex-col shadow-sm`;
+    el.innerHTML = `<div class="flex items-center gap-3 w-full"><span class="flex-1">${r.html}</span>${bell}</div>${hint}`;
     el.classList.remove('hidden');
 
     maybeNotify(r.actionable, r.text);
