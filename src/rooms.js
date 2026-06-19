@@ -17,7 +17,8 @@ export function submitGoodDeed(e) {
     if (!doerEl || !descEl) return;
     const doer = doerEl.value; const desc = descEl.value;
     if (!doer) return;
-    gameState.goodDeeds.push({ id: Date.now(), doer: doer, desc: desc, points: 10 });
+    const now = Date.now();
+    gameState.goodDeeds.push({ id: now, ts: now, doer: doer, desc: desc, points: 10 });
     descEl.value = "";
     doerEl.selectedIndex = 0;
     saveGameState(`מעשה חסד של ${doer}`);

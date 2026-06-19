@@ -176,12 +176,14 @@ function promptPassphrase() {
         const skip  = wrap.querySelector('#cloud-pass-skip');
         input.focus();
 
+        function close(result) { document.removeEventListener('keydown', onKey); wrap.remove(); resolve(result); }
+        function onKey(e) { if (e.key === 'Escape') close(false); }
         async function submit() {
             const val = input.value.trim();
             if (!val) return;
             btn.disabled = true; err.textContent = 'בודק...';
             try {
-                if (await setPassphrase(val)) { wrap.remove(); resolve(true); }
+                if (await setPassphrase(val)) { close(true); }
                 else { err.textContent = 'סיסמה שגויה, נסו שוב'; btn.disabled = false; input.select(); }
             } catch (e) {
                 err.textContent = 'אין חיבור לשרת'; btn.disabled = false;
@@ -189,6 +191,9 @@ function promptPassphrase() {
         }
         btn.addEventListener('click', submit);
         input.addEventListener('keydown', (e) => { if (e.key === 'Enter') submit(); });
-        skip.addEventListener('click', () => { wrap.remove(); resolve(false); });
+        skip.addEventListener('click', () => close(false));
+        // לחיצה על הרקע (מחוץ לכרטיס) או Escape — סוגרת וממשיכה ללא סנכרון, כדי לא ללכוד את המשתמש מאחורי שכבה שקופה
+        wrap.addEventListener('click', (e) => { if (e.target === wrap) close(false); });
+        document.addEventListener('keydown', onKey);
     });
 }

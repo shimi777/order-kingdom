@@ -2,7 +2,7 @@
 // render.js — DOM rendering, view switching, toast, sparkles.
 // ===================================================================
 
-import { CHARACTERS, GRADIENT_FALLBACKS, STATIC_ROOM_IMAGES, EDITABLE_CHARS, config } from './constants.js';
+import { CHARACTERS, GRADIENT_FALLBACKS, STATIC_ROOM_IMAGES, EDITABLE_CHARS, DAY_NAMES, config } from './constants.js';
 import { escapeHtml } from './util.js';
 import { gameState, saveGameState, getRoomFreshnessPct, isDaily, effectiveChar } from './state.js';
 import { editMode, openTaskEditor } from './tasks.js';
@@ -248,6 +248,16 @@ export function renderDeedsWall() {
     wall.innerHTML = "";
     [...deeds].reverse().forEach(d => {
         const c = CHARACTERS[d.doer] || { name: d.doer, emoji: "✨", color: "from-slate-100 to-slate-200" };
+        // חותמת זמן: שדה ts מפורש בחסדים חדשים, ולמעשים ותיקים נופלים חזרה ל-id (שהוא Date.now בעת היצירה)
+        const ts = d.ts || d.id;
+        const stamp = (typeof ts === "number" && ts > 1e12) ? (() => {
+            const dt = new Date(ts);
+            return `<div class="flex items-center gap-1.5 text-[10px] text-slate-400 font-bold mt-3 flex-wrap">
+                        <span>🗓️ יום ${DAY_NAMES[dt.getDay()]}</span><span class="text-slate-300">•</span>
+                        <span>${dt.toLocaleDateString("he-IL")}</span><span class="text-slate-300">•</span>
+                        <span>🕐 ${dt.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}</span>
+                    </div>`;
+        })() : "";
         const editControls = editMode ? `
             <div class="flex gap-1.5 mt-3 pt-3 border-t border-pink-100">
                 <button onclick="openGoodDeedEditor(${d.id})" class="flex-1 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-[11px] font-bold border border-amber-100">✏️ עריכה</button>
@@ -266,6 +276,7 @@ export function renderDeedsWall() {
                     <span class="shrink-0 bg-rose-100 text-rose-600 font-black text-xs px-2.5 py-1 rounded-full">+${d.points} 🏡</span>
                 </div>
                 <p class="text-sm text-slate-700 leading-relaxed">"${escapeHtml(d.desc)}"</p>
+                ${stamp}
                 ${editControls}
             </div>`;
     });
