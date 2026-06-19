@@ -134,6 +134,14 @@ export function rejectProof(taskId) {
     saveGameState(`דחיית הוכחה: ${t.title}`);
     showToast('↩️ נדחתה', `יש לצלם שוב את "${t.title}".`);
 }
+// הסרה עצמית של התמונה (לפני אישור הורה) כדי לצלם חדשה
+export function removeProof(taskId) {
+    const t = findTask(taskId);
+    if (!t || t.proofApproved) return;
+    t.proofPhoto = null; t.proofApproved = false;
+    saveGameState(`הסרת הוכחה: ${t.title}`);
+    showToast('🗑️ התמונה הוסרה', `אפשר לצלם תמונה חדשה ל"${t.title}".`);
+}
 
 // ===== מצב עריכה גלובלי (מוגן בסיסמת הורים) =====
 export let editMode = false;

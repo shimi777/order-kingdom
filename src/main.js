@@ -35,6 +35,7 @@ Object.assign(window, {
     attachProof: tasks.attachProof,
     approveProof: tasks.approveProof,
     rejectProof: tasks.rejectProof,
+    removeProof: tasks.removeProof,
     toggleTask: tasks.toggleTask,
     markAllRoomTasksCompleted: tasks.markAllRoomTasksCompleted,
     setPersonalGoal: tasks.setPersonalGoal,

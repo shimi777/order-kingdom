@@ -129,12 +129,25 @@ export function renderTasks() {
             const status = task.proofApproved
                 ? '<span class="text-[8px] text-emerald-600 font-bold">✅ אושר</span>'
                 : '<span class="text-[8px] text-amber-600 font-bold">⏳ לאישור</span>';
-            const approveBtns = (editMode && !task.proofApproved) ? `
+            let btns = "";
+            if (editMode && !task.proofApproved) {
+                // הורה: אישור / דחייה
+                btns = `
                 <button onclick="approveProof(${task.id})" class="w-6 h-6 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 text-[11px] flex items-center justify-center" title="אשר">✓</button>
-                <button onclick="rejectProof(${task.id})" class="w-6 h-6 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 text-[11px] flex items-center justify-center" title="דחה">✗</button>` : "";
+                <button onclick="rejectProof(${task.id})" class="w-6 h-6 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 text-[11px] flex items-center justify-center" title="דחה">✗</button>`;
+            } else if (!task.proofApproved) {
+                // לפני אישור — הילד יכול להחליף או להסיר את התמונה
+                btns = `
+                <button onclick="attachProof(${task.id})" class="w-6 h-6 rounded-md bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-100 text-[11px] flex items-center justify-center" title="החלף תמונה">🔄</button>
+                <button onclick="removeProof(${task.id})" class="w-6 h-6 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-500 border border-slate-200 text-[11px] flex items-center justify-center" title="הסר תמונה">🗑️</button>`;
+            }
+            // תמונה לא-מאושרת לחיצה עליה מחליפה אותה
+            const imgCls = task.proofApproved
+                ? `class="w-9 h-9 rounded-lg object-cover border border-slate-200"`
+                : `onclick="attachProof(${task.id})" title="לחצו להחלפת התמונה" class="w-9 h-9 rounded-lg object-cover border border-slate-200 cursor-pointer"`;
             proofControl = `<div class="flex flex-col items-center gap-1">
-                <img src="${task.proofPhoto}" class="w-9 h-9 rounded-lg object-cover border border-slate-200" alt="הוכחה">
-                ${status}<div class="flex gap-1">${approveBtns}</div>
+                <img src="${task.proofPhoto}" ${imgCls} alt="הוכחה">
+                ${status}<div class="flex gap-1">${btns}</div>
             </div>`;
         } else if (!editMode && !task.hidden) {
             proofControl = `<button onclick="attachProof(${task.id})" title="צרף תמונת הוכחה" class="w-9 h-9 shrink-0 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-100 flex items-center justify-center text-base">📷</button>`;
