@@ -59,6 +59,8 @@ Object.assign(window, {
     pickBirthdayAvatar: birthdays.pickBirthdayAvatar,
     pickBirthdayPhoto: birthdays.pickBirthdayPhoto,
     setBirthdayType: birthdays.setBirthdayType,
+    setBirthdayView: birthdays.setBirthdayView,
+    toggleBirthdayGroup: birthdays.toggleBirthdayGroup,
     importBirthdaysFromCSV: birthdays.importBirthdaysFromCSV,
     // state.js
     saveScriptUrl: state.saveScriptUrl,

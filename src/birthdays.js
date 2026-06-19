@@ -9,9 +9,54 @@ import { showToast, createSparkles } from './render.js';
 import { editMode } from './tasks.js';
 import { renderMonth } from './schedule.js';
 import { escapeHtml, escapeAttr, downscaleImage } from './util.js';
-import { AVATAR_CHOICES, HEB_MONTHS, EVENT_TYPES } from './constants.js';
+import { AVATAR_CHOICES, HEB_MONTHS, EVENT_TYPES, BIRTHDAY_GROUPS } from './constants.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+// ---------- תצוגה: רשימה / עץ (מועדף נשמר מקומית) ----------
+let birthdayView = (typeof localStorage !== 'undefined' && localStorage.getItem('kingdom_birthday_view')) || 'list';
+
+// ענפים מכווצים בתצוגת העץ (נשמר מקומית)
+let collapsedGroups = new Set();
+try {
+    const saved = JSON.parse(localStorage.getItem('kingdom_birthday_collapsed') || '[]');
+    if (Array.isArray(saved)) collapsedGroups = new Set(saved);
+} catch (e) {}
+
+export function setBirthdayView(v) {
+    birthdayView = (v === 'tree') ? 'tree' : 'list';
+    try { localStorage.setItem('kingdom_birthday_view', birthdayView); } catch (e) {}
+    renderBirthdays();
+}
+
+// כיווץ/פרישה של ענף בתצוגת העץ
+export function toggleBirthdayGroup(key) {
+    if (collapsedGroups.has(key)) collapsedGroups.delete(key);
+    else collapsedGroups.add(key);
+    try { localStorage.setItem('kingdom_birthday_collapsed', JSON.stringify([...collapsedGroups])); } catch (e) {}
+    renderBirthdays();
+}
+
+function _renderViewToggle() {
+    const map = { list: 'birthday-view-list', tree: 'birthday-view-tree' };
+    Object.entries(map).forEach(([v, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const active = (birthdayView === v);
+        el.className = `py-1.5 px-3 rounded-lg text-xs font-bold transition-all ${active ? 'bg-white text-amber-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`;
+    });
+}
+
+// קיבוץ ברירת מחדל לפי הקשר המשפחתי (לרשומות ללא שדה group)
+function groupFromRelation(relation, type) {
+    if (type === 'anniversary') return 'anniv';
+    const r = (relation || '').trim();
+    if (/סב(א|תא)|א(מא|בא) של/.test(r)) return 'grand';   // סבים, וגם "אמא/אבא של ..."
+    if (/הב(ן|ת)\s+של/.test(r))  return 'cousins';
+    if (/דוד|דודה/.test(r))      return 'uncles';
+    if (/^(אבא|אמא|בן|בת|כלב)$/.test(r)) return 'home';
+    return 'other';
+}
 
 // ---------- עזרי תאריך ----------
 export function hasDate(b) { return Number.isInteger(b.day) && Number.isInteger(b.month); }
@@ -94,65 +139,94 @@ export function renderBirthdays() {
 
     const sorted = [...bdays].sort((a, b) => daysUntilNext(a.day, a.month) - daysUntilNext(b.day, b.month));
 
-    list.innerHTML = "";
-    sorted.forEach(b => {
-        const today = isToday(b);
-        const dleft = daysUntilNext(b.day, b.month);
-        const age   = nextAge(b.year, b.day, b.month);
-        const type  = b.type || 'birthday';
-        const info  = typeInfo(type);
-        const sty   = typeStyle(type);
+    _renderViewToggle();
 
-        const avatar = b.photo
-            ? `<img src="${b.photo}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm shrink-0" alt="${escapeAttr(b.name)}">`
-            : `<div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-amber-100 to-pink-100 border-2 border-white shadow-sm shrink-0">${b.emoji || info.emoji}</div>`;
-
-        let dateLine, countLine;
-        if (hasDate(b)) {
-            dateLine  = `🗓️ ${b.day} ב${HEB_MONTHS[b.month - 1]}`;
-            countLine = today ? "🎉 היום!" : dleft === 1 ? "מחר! 🎈" : `בעוד ${dleft} ימים`;
-        } else {
-            dateLine  = "🗓️ — ללא תאריך";
-            countLine = editMode ? "✏️ הוסיפו תאריך" : "";
-        }
-
-        const ageLine = (age !== null && hasDate(b)) ? ageLabel(type, age) : "";
-        const badge   = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 border border-slate-100 text-slate-400">${info.emoji} ${info.label}</span>`;
-
-        const cardCls = today
-            ? `watercolor-card p-5 ${sty.todayBorder} bg-gradient-to-br ${sty.todayBg} ${sty.todayRing} flex flex-col`
-            : `watercolor-card p-5 ${sty.border} bg-gradient-to-br ${sty.bg} flex flex-col`;
-
-        const editControls = editMode ? `
-            <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100">
-                <button onclick="openBirthdayEditor(${b.id})" class="flex-1 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-[11px] font-bold border border-amber-100">✏️ עריכה</button>
-                <button onclick="deleteBirthday(${b.id})" class="flex-1 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold border border-rose-100">🗑️ מחיקה</button>
-            </div>` : "";
-
-        list.innerHTML += `
-            <div class="${cardCls}">
-                <div class="flex items-center gap-3">
-                    ${avatar}
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-2 flex-wrap mb-0.5">
-                            <span class="font-extrabold text-base text-slate-800 truncate">${escapeHtml(b.name)} ${today ? info.emoji : ""}</span>
-                            ${badge}
-                        </div>
-                        <div class="text-[12px] text-slate-500 font-bold mt-0.5">${dateLine}</div>
-                        <div class="flex items-center gap-2 mt-1 flex-wrap">
-                            ${countLine ? `<span class="text-[11px] font-black ${today ? sty.todayCount : sty.countColor}">${countLine}</span>` : ""}
-                            ${ageLine}
-                        </div>
-                    </div>
-                </div>
-                ${editControls}
+    if (birthdayView === 'tree') {
+        // תצוגת עץ: קיבוץ לפי ענף משפחתי; בתוך כל ענף — מהמבוגר לצעיר
+        let html = "";
+        BIRTHDAY_GROUPS.forEach(g => {
+            const members = sorted
+                .filter(b => (b.group || groupFromRelation(b.relation, b.type)) === g.key)
+                .sort((a, b) => (a.year || 9999) - (b.year || 9999));
+            if (!members.length) return;
+            const collapsed = collapsedGroups.has(g.key);
+            html += `<div class="col-span-full flex items-center gap-2 mt-3 first:mt-0 cursor-pointer select-none group" onclick="toggleBirthdayGroup('${g.key}')" title="${collapsed ? 'פתחו' : 'כווצו'} את הענף">
+                <span class="text-slate-400 text-xs w-3 text-center">${collapsed ? '▸' : '▾'}</span>
+                <span class="text-lg">${g.emoji}</span>
+                <h3 class="text-sm font-extrabold text-slate-600 group-hover:text-amber-700">${g.label}</h3>
+                <span class="text-[11px] text-slate-300 font-bold">${members.length}</span>
+                <div class="flex-1 h-px bg-slate-200/70"></div>
             </div>`;
-    });
+            if (!collapsed) html += members.map(_cardHTML).join("");
+        });
+        list.innerHTML = html;
+    } else {
+        // תצוגת רשימה: שטוח, לפי האירוע הקרוב
+        list.innerHTML = sorted.map(_cardHTML).join("");
+    }
 
     const view = document.getElementById("view-birthdays");
     if (view && !view.classList.contains("hidden") && sorted.some(isToday)) {
         createSparkles(window.innerWidth / 2, window.innerHeight * 0.3);
     }
+}
+
+// קוד כרטיס בודד — משותף לתצוגת הרשימה ולתצוגת העץ
+function _cardHTML(b) {
+    const today = isToday(b);
+    const dleft = daysUntilNext(b.day, b.month);
+    const age   = nextAge(b.year, b.day, b.month);
+    const type  = b.type || 'birthday';
+    const info  = typeInfo(type);
+    const sty   = typeStyle(type);
+
+    const avatar = b.photo
+        ? `<img src="${b.photo}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm shrink-0" alt="${escapeAttr(b.name)}">`
+        : `<div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-amber-100 to-pink-100 border-2 border-white shadow-sm shrink-0">${b.emoji || info.emoji}</div>`;
+
+    let dateLine, countLine;
+    if (hasDate(b)) {
+        dateLine  = `🗓️ ${b.day} ב${HEB_MONTHS[b.month - 1]}`;
+        countLine = today ? "🎉 היום!" : dleft === 1 ? "מחר! 🎈" : `בעוד ${dleft} ימים`;
+    } else {
+        dateLine  = "🗓️ — ללא תאריך";
+        countLine = editMode ? "✏️ הוסיפו תאריך" : "";
+    }
+
+    const ageLine = (age !== null && hasDate(b)) ? ageLabel(type, age) : "";
+    const badge   = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 border border-slate-100 text-slate-400">${info.emoji} ${info.label}</span>`;
+    const relLine = b.relation
+        ? `<div class="text-[11px] text-slate-400 font-bold mt-0.5">👪 ${escapeHtml(b.relation)}</div>` : "";
+
+    const cardCls = today
+        ? `watercolor-card p-5 ${sty.todayBorder} bg-gradient-to-br ${sty.todayBg} ${sty.todayRing} flex flex-col`
+        : `watercolor-card p-5 ${sty.border} bg-gradient-to-br ${sty.bg} flex flex-col`;
+
+    const editControls = editMode ? `
+        <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100">
+            <button onclick="openBirthdayEditor(${b.id})" class="flex-1 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-[11px] font-bold border border-amber-100">✏️ עריכה</button>
+            <button onclick="deleteBirthday(${b.id})" class="flex-1 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold border border-rose-100">🗑️ מחיקה</button>
+        </div>` : "";
+
+    return `
+        <div class="${cardCls}">
+            <div class="flex items-center gap-3">
+                ${avatar}
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                        <span class="font-extrabold text-base text-slate-800 truncate">${escapeHtml(b.name)} ${today ? info.emoji : ""}</span>
+                        ${badge}
+                    </div>
+                    <div class="text-[12px] text-slate-500 font-bold mt-0.5">${dateLine}</div>
+                    ${relLine}
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        ${countLine ? `<span class="text-[11px] font-black ${today ? sty.todayCount : sty.countColor}">${countLine}</span>` : ""}
+                        ${ageLine}
+                    </div>
+                </div>
+            </div>
+            ${editControls}
+        </div>`;
 }
 
 // ---------- סלקטור טיפוס ----------
@@ -182,6 +256,7 @@ export function openBirthdayEditor(id) {
     };
     document.getElementById("birthday-edit-id").value   = b ? b.id : "";
     document.getElementById("birthday-edit-name").value = b ? b.name : "";
+    document.getElementById("birthday-edit-relation").value = (b && b.relation) ? b.relation : "";
     document.getElementById("birthday-edit-day").value  = (b && Number.isInteger(b.day)) ? b.day : "";
     document.getElementById("birthday-edit-year").value = (b && Number.isInteger(b.year)) ? b.year : "";
 
@@ -248,6 +323,7 @@ export function closeBirthdayEditor() {
 export function saveBirthdayEditor() {
     const idRaw  = document.getElementById("birthday-edit-id").value;
     const name   = document.getElementById("birthday-edit-name").value.trim();
+    const relation = document.getElementById("birthday-edit-relation").value.trim();
     const day    = parseInt(document.getElementById("birthday-edit-day").value, 10);
     const month  = parseInt(document.getElementById("birthday-edit-month").value, 10);
     const yearRaw = document.getElementById("birthday-edit-year").value.trim();
@@ -264,9 +340,14 @@ export function saveBirthdayEditor() {
 
     if (idRaw) {
         const b = gameState.birthdays.find(x => x.id === parseInt(idRaw, 10));
-        if (b) { b.name = name; b.type = type; b.day = day; b.month = month; b.year = cleanYear; b.emoji = st.emoji || "🎂"; b.photo = st.photo || null; }
+        if (b) {
+            b.name = name; b.type = type; b.relation = relation;
+            b.group = groupFromRelation(relation, type);
+            b.day = day; b.month = month; b.year = cleanYear;
+            b.emoji = st.emoji || "🎂"; b.photo = st.photo || null;
+        }
     } else {
-        gameState.birthdays.push({ id: Date.now(), name, type, day, month, year: cleanYear, emoji: st.emoji || "🎂", photo: st.photo || null });
+        gameState.birthdays.push({ id: Date.now(), name, type, relation, group: groupFromRelation(relation, type), day, month, year: cleanYear, emoji: st.emoji || "🎂", photo: st.photo || null });
     }
     closeBirthdayEditor();
     const label = typeInfo(type).label;
@@ -317,16 +398,17 @@ export async function importBirthdaysFromCSV() {
         // זיהוי שורת כותרת ומיפוי עמודות לפי שם; אחרת — מיקום קבוע
         const header = rows[0].map(h => h.toLowerCase());
         const hasHeader = header.some(h => /שם|name/.test(h));
-        let col = { name: 0, type: 1, day: 2, month: 3, year: 4, emoji: 5 };
+        let col = { name: 0, relation: -1, type: 1, day: 2, month: 3, year: 4, emoji: 5 };
         if (hasHeader) {
-            col = { name: -1, type: -1, day: -1, month: -1, year: -1, emoji: -1 };
+            col = { name: -1, relation: -1, type: -1, day: -1, month: -1, year: -1, emoji: -1 };
             header.forEach((h, i) => {
-                if (col.name  < 0 && /שם|name/.test(h))        col.name  = i;
-                else if (col.type  < 0 && /סוג|type/.test(h))  col.type  = i;
-                else if (col.day   < 0 && /^יום$|^day$/.test(h)) col.day = i;
-                else if (col.month < 0 && /חודש|month/.test(h)) col.month = i;
-                else if (col.year  < 0 && /שנה|year/.test(h))   col.year  = i;
-                else if (col.emoji < 0 && /אימוג|emoji/.test(h)) col.emoji = i;
+                if (col.name  < 0 && /שם|name/.test(h))            col.name  = i;
+                else if (col.relation < 0 && /קשר|relation/.test(h)) col.relation = i;
+                else if (col.type  < 0 && /סוג|type/.test(h))      col.type  = i;
+                else if (col.day   < 0 && /^יום$|^day$/.test(h))   col.day = i;
+                else if (col.month < 0 && /חודש|month/.test(h))    col.month = i;
+                else if (col.year  < 0 && /שנה|year/.test(h))      col.year  = i;
+                else if (col.emoji < 0 && /אימוג|emoji/.test(h))   col.emoji = i;
             });
             if (col.name < 0) col.name = 0;
         }
@@ -338,6 +420,7 @@ export async function importBirthdaysFromCSV() {
             const cols = rows[i];
             const name = at(cols, col.name);
             if (!name) { skipped++; continue; }
+            const relation = at(cols, col.relation);
             const type  = mapEventType(at(cols, col.type));
             const day   = parseInt(at(cols, col.day),   10) || null;
             const month = parseInt(at(cols, col.month), 10) || null;
@@ -345,7 +428,7 @@ export async function importBirthdaysFromCSV() {
             const emoji = at(cols, col.emoji) || typeInfo(type).emoji;
             // דלג על כפילויות (שם + טיפוס)
             if (gameState.birthdays.some(b => b.name === name && (b.type || 'birthday') === type)) { skipped++; continue; }
-            gameState.birthdays.push({ id: Date.now() + i, name, type, day, month, year, emoji, photo: null });
+            gameState.birthdays.push({ id: Date.now() + i, name, type, relation, group: groupFromRelation(relation, type), day, month, year, emoji, photo: null });
             added++;
         }
         if (added > 0) { saveGameState("ייבוא מועדים מ-CSV"); renderMonth(); }

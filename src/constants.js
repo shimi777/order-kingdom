@@ -140,42 +140,52 @@ export const EVENT_TYPES = [
     { id: 'memorial',    label: 'יום פטירה',   emoji: '🕯️' },
 ];
 
+// ===== קבוצות לתצוגת "עץ" (קיבוץ לפי ענף משפחתי, לפי שדה group) =====
+export const BIRTHDAY_GROUPS = [
+    { key: 'home',    label: 'משק הבית',      emoji: '👑' },
+    { key: 'grand',   label: 'סבים וסבתות',   emoji: '👴' },
+    { key: 'uncles',  label: 'דודים ודודות',  emoji: '🌳' },
+    { key: 'cousins', label: 'בני הדודים',    emoji: '🧒' },
+    { key: 'anniv',   label: 'ימי נישואין',   emoji: '💍' },
+    { key: 'other',   label: 'משפחה נוספת',   emoji: '👪' },
+];
+
 export const DEFAULT_BIRTHDAYS = [
     // ===== משק הבית =====
-    { id: 1,  name: "שקד",       type: 'birthday',    day: 11, month: 7,  year: 2015, emoji: "🛡️", photo: null },
-    { id: 2,  name: "נווה דוד",  type: 'birthday',    day: 7,  month: 2,  year: 2019, emoji: "🪄", photo: null },
-    { id: 3,  name: "ארבל",      type: 'birthday',    day: 28, month: 9,  year: 2024, emoji: "🧚", photo: null },
-    { id: 4,  name: "שימי",      type: 'birthday',    day: 10, month: 2,  year: 1985, emoji: "👑", photo: null },
-    { id: 5,  name: "נעמי",      type: 'birthday',    day: 16, month: 8,  year: 1989, emoji: "👸", photo: null },
-    { id: 6,  name: "שוקו הכלב", type: 'birthday',    day: 17, month: 9,  year: 2023, emoji: "🐶", photo: null },
+    { id: 1,  name: "שקד",       type: 'birthday',    group: 'home',    relation: "בת",  day: 11, month: 7,  year: 2015, emoji: "🛡️", photo: null },
+    { id: 2,  name: "נווה דוד",  type: 'birthday',    group: 'home',    relation: "בן",  day: 7,  month: 2,  year: 2019, emoji: "🪄", photo: null },
+    { id: 3,  name: "ארבל",      type: 'birthday',    group: 'home',    relation: "בת",  day: 28, month: 9,  year: 2024, emoji: "🧚", photo: null },
+    { id: 4,  name: "שימי",      type: 'birthday',    group: 'home',    relation: "אבא", day: 10, month: 2,  year: 1985, emoji: "👑", photo: null },
+    { id: 5,  name: "נעמי",      type: 'birthday',    group: 'home',    relation: "אמא", day: 16, month: 8,  year: 1989, emoji: "👸", photo: null },
+    { id: 6,  name: "שוקו הכלב", type: 'birthday',    group: 'home',    relation: "כלב", day: 17, month: 9,  year: 2023, emoji: "🐶", photo: null },
     // ===== סבים וסבתות =====
-    { id: 7,  name: "סבא דודו",  type: 'birthday',    day: 2,  month: 6,  year: 1955, emoji: "👴", photo: null },
-    { id: 8,  name: "סבתא זיווה",type: 'birthday',    day: 13, month: 3,  year: 1958, emoji: "👵", photo: null },
-    { id: 9,  name: "יוחנן",     type: 'birthday',    day: 24, month: 5,  year: 1961, emoji: "👴", photo: null },
-    { id: 10, name: "רות",       type: 'birthday',    day: 10, month: 4,  year: 1965, emoji: "👵", photo: null },
+    { id: 7,  name: "סבא דודו",  type: 'birthday',    group: 'grand',   relation: "סבא", day: 2,  month: 6,  year: 1955, emoji: "👴", photo: null },
+    { id: 8,  name: "סבתא זיווה",type: 'birthday',    group: 'grand',   relation: "סבתא", day: 13, month: 3,  year: 1958, emoji: "👵", photo: null },
+    { id: 9,  name: "יוחנן",     type: 'birthday',    group: 'grand',   relation: "סבא (אבא של נעמי)", day: 24, month: 5,  year: 1961, emoji: "👴", photo: null },
+    { id: 10, name: "רות",       type: 'birthday',    group: 'grand',   relation: "סבתא (אמא של נעמי)", day: 10, month: 4,  year: 1965, emoji: "👵", photo: null },
+    { id: 22, name: "אריאלה",    type: 'birthday',    group: 'grand',   relation: "אמא של דודה טל", day: 28, month: 11, year: 1956, emoji: "👵", photo: null },
     // ===== דודים ודודות =====
-    { id: 11, name: "זוהר",      type: 'birthday',    day: 13, month: 9,  year: 1982, emoji: "👨", photo: null },
-    { id: 12, name: "כנרת",      type: 'birthday',    day: 17, month: 8,  year: 1984, emoji: "👩", photo: null },
-    { id: 13, name: "רן עזרא",   type: 'birthday',    day: 15, month: 1,  year: 1999, emoji: "👨", photo: null },
-    { id: 14, name: "אוריה",     type: 'birthday',    day: 22, month: 8,  year: 1991, emoji: "👨", photo: null },
-    { id: 15, name: "טל",        type: 'birthday',    day: 20, month: 5,  year: 1992, emoji: "👩", photo: null },
-    { id: 16, name: "ריקי",      type: 'birthday',    day: 19, month: 3,  year: 1989, emoji: "👩", photo: null },
-    { id: 17, name: "רודי",      type: 'birthday',    day: 25, month: 3,  year: 1991, emoji: "👨", photo: null },
-    { id: 18, name: "יוסף",      type: 'birthday',    day: 17, month: 3,  year: 1988, emoji: "👨", photo: null },
-    { id: 19, name: "אפי",       type: 'birthday',    day: 14, month: 4,  year: 1996, emoji: "🧑", photo: null },
-    { id: 20, name: "רייני",     type: 'birthday',    day: 2,  month: 11, year: 1992, emoji: "🧑", photo: null },
-    { id: 21, name: "דודה רבקה", type: 'birthday',    day: 19, month: 3,  year: 1988, emoji: "👩", photo: null },
-    { id: 22, name: "אריאלה",    type: 'birthday',    day: 28, month: 11, year: 1956, emoji: "👵", photo: null },
+    { id: 11, name: "זוהר",      type: 'birthday',    group: 'uncles',  relation: "דוד (אח של שימי)", day: 13, month: 9,  year: 1982, emoji: "👨", photo: null },
+    { id: 12, name: "כנרת",      type: 'birthday',    group: 'uncles',  relation: "דודה (אשת זוהר)", day: 17, month: 8,  year: 1984, emoji: "👩", photo: null },
+    { id: 13, name: "רן עזרא",   type: 'birthday',    group: 'uncles',  relation: "דוד (אח של שימי)", day: 15, month: 1,  year: 1999, emoji: "👨", photo: null },
+    { id: 14, name: "אוריה",     type: 'birthday',    group: 'uncles',  relation: "דוד (אח של שימי)", day: 22, month: 8,  year: 1991, emoji: "👨", photo: null },
+    { id: 15, name: "טל",        type: 'birthday',    group: 'uncles',  relation: "דודה (אשת אוריה)", day: 20, month: 5,  year: 1992, emoji: "👩", photo: null },
+    { id: 16, name: "ריקי",      type: 'birthday',    group: 'uncles',  relation: "דודה (אחות של שימי)", day: 19, month: 3,  year: 1989, emoji: "👩", photo: null },
+    { id: 17, name: "רודי",      type: 'birthday',    group: 'uncles',  relation: "דוד (אח של נעמי)", day: 25, month: 3,  year: 1991, emoji: "👨", photo: null },
+    { id: 18, name: "יוסף",      type: 'birthday',    group: 'uncles',  relation: "דוד (אח של נעמי)", day: 17, month: 3,  year: 1988, emoji: "👨", photo: null },
+    { id: 19, name: "אפי",       type: 'birthday',    group: 'uncles',  relation: "דוד (אח של נעמי)", day: 14, month: 4,  year: 1996, emoji: "🧑", photo: null },
+    { id: 20, name: "רייני",     type: 'birthday',    group: 'uncles',  relation: "דודה (אחות של נעמי)", day: 2,  month: 11, year: 1992, emoji: "🧑", photo: null },
+    { id: 21, name: "דודה רבקה", type: 'birthday',    group: 'uncles',  relation: "דודה", day: 19, month: 3,  year: 1988, emoji: "👩", photo: null },
     // ===== בני הדודים =====
-    { id: 23, name: "מוריה",     type: 'birthday',    day: 26, month: 7,  year: 2014, emoji: "👧", photo: null },
-    { id: 24, name: "שרה",       type: 'birthday',    day: 1,  month: 11, year: 2011, emoji: "👧", photo: null },
-    { id: 25, name: "נועה",      type: 'birthday',    day: 1,  month: 11, year: 2011, emoji: "👧", photo: null },
-    { id: 26, name: "אלרואי",    type: 'birthday',    day: 18, month: 3,  year: 2019, emoji: "👦", photo: null },
-    { id: 27, name: "יהלי",      type: 'birthday',    day: 28, month: 3,  year: 2021, emoji: "👦", photo: null },
-    { id: 28, name: "שליו",      type: 'birthday',    day: 25, month: 11, year: 2022, emoji: "👦", photo: null },
+    { id: 23, name: "מוריה",     type: 'birthday',    group: 'cousins', relation: "הבת של זוהר וכנרת", day: 26, month: 7,  year: 2014, emoji: "👧", photo: null },
+    { id: 24, name: "שרה",       type: 'birthday',    group: 'cousins', relation: "הבת של זוהר וכנרת", day: 1,  month: 11, year: 2011, emoji: "👧", photo: null },
+    { id: 25, name: "נועה",      type: 'birthday',    group: 'cousins', relation: "הבת של זוהר וכנרת", day: 1,  month: 11, year: 2011, emoji: "👧", photo: null },
+    { id: 26, name: "אלרואי",    type: 'birthday',    group: 'cousins', relation: "הבן של אוריה וטל", day: 18, month: 3,  year: 2019, emoji: "👦", photo: null },
+    { id: 27, name: "יהלי",      type: 'birthday',    group: 'cousins', relation: "הבן של אוריה וטל", day: 28, month: 3,  year: 2021, emoji: "👦", photo: null },
+    { id: 28, name: "שליו",      type: 'birthday',    group: 'cousins', relation: "הבן של אוריה וטל", day: 25, month: 11, year: 2022, emoji: "👦", photo: null },
     // ===== ימי נישואין =====
-    { id: 29, name: "אוריה וטל", type: 'anniversary', day: 22, month: 6,  year: 2017, emoji: "💍", photo: null },
-    { id: 30, name: "כנרת וזוהר",type: 'anniversary', day: 7,  month: 2,  year: 2011, emoji: "💍", photo: null },
+    { id: 29, name: "אוריה וטל", type: 'anniversary', group: 'anniv',   relation: "בני זוג", day: 22, month: 6,  year: 2017, emoji: "💍", photo: null },
+    { id: 30, name: "כנרת וזוהר",type: 'anniversary', group: 'anniv',   relation: "בני זוג", day: 7,  month: 2,  year: 2011, emoji: "💍", photo: null },
 ];
 
 // ===== מצב עריכה גלובלי (מוגן בסיסמת הורים) =====

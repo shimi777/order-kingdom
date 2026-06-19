@@ -428,7 +428,11 @@
                     </div>
                     <p class="text-xs text-slate-400">ימי הולדת 🎂, יום נישואין 💍, ימי זיכרון 🕯️ — עם תמונה או אווטאר, ספירה לאחור וגיל. מופיעים בלוח החודשי! ✨</p>
                 </div>
-                <div class="flex gap-2 flex-wrap justify-end">
+                <div class="flex gap-2 flex-wrap justify-end items-center">
+                    <div class="flex rounded-xl bg-slate-100 p-0.5">
+                        <button id="birthday-view-list" onclick="setBirthdayView('list')" class="py-1.5 px-3 rounded-lg text-xs font-bold text-slate-500">📋 רשימה</button>
+                        <button id="birthday-view-tree" onclick="setBirthdayView('tree')" class="py-1.5 px-3 rounded-lg text-xs font-bold text-slate-500">🌳 עץ</button>
+                    </div>
                     <button id="birthday-import-csv-btn" onclick="importBirthdaysFromCSV()" class="hidden py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-xl text-xs flex items-center gap-1.5 whitespace-nowrap shadow-sm">
                         📤 ייבוא CSV
                     </button>
@@ -480,6 +484,10 @@
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 mb-1">שם</label>
                     <input id="birthday-edit-name" type="text" placeholder="לדוגמה: סבתא רותי" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">קשר משפחתי <span class="text-slate-300">(לא חובה)</span></label>
+                    <input id="birthday-edit-relation" type="text" placeholder="לדוגמה: דוד (אח של שימי)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
                 </div>
                 <div class="grid grid-cols-3 gap-3">
                     <div>

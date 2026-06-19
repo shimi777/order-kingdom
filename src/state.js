@@ -129,18 +129,19 @@ export function ensureGameDefaults() {
     if (!gameState.birthdays) gameState.birthdays = JSON.parse(JSON.stringify(DEFAULT_BIRTHDAYS));
     // טעינה חד-פעמית של בני המשפחה המורחבים: משלימה אנשים חסרים וממלאת תאריכים שטרם הוזנו,
     // בלי לדרוס שמות/אווטרים/תאריכים שההורים ערכו ידנית. רץ פעם אחת בלבד (דגל birthdaysSeedV2).
-    if (!gameState.birthdaysSeedV3) {
+    if (!gameState.birthdaysSeedV4) {
         const byId = new Map(gameState.birthdays.map(b => [b.id, b]));
         DEFAULT_BIRTHDAYS.forEach(def => {
             const cur = byId.get(def.id);
-            if (!cur) {
-                gameState.birthdays.push(JSON.parse(JSON.stringify(def)));
-            } else if (!Number.isInteger(cur.day) || !Number.isInteger(cur.month)) {
+            if (!cur) { gameState.birthdays.push(JSON.parse(JSON.stringify(def))); return; }
+            if (!Number.isInteger(cur.day) || !Number.isInteger(cur.month)) {
                 cur.day = def.day; cur.month = def.month; cur.year = def.year;
-                if (!cur.type) cur.type = def.type;
             }
+            if (!cur.type)     cur.type     = def.type;
+            if (!cur.relation) cur.relation = def.relation;  // השלמת קשר משפחתי
+            if (!cur.group)    cur.group    = def.group;      // השלמת ענף לתצוגת עץ
         });
-        gameState.birthdaysSeedV3 = true;
+        gameState.birthdaysSeedV4 = true;
     }
 }
 
