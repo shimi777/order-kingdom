@@ -123,6 +123,22 @@ export function renderTasks() {
                 <button onclick="toggleHideTask(${task.id})" class="w-7 h-7 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-500 text-xs flex items-center justify-center border border-slate-200" title="${task.hidden ? 'הצג' : 'הסתר'}">${task.hidden ? '👁️' : '🙈'}</button>
                 <button onclick="deleteTask(${task.id})" class="w-7 h-7 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs flex items-center justify-center border border-rose-100" title="מחיקה">🗑️</button>
             </div>` : "";
+        // הוכחת ביצוע בתמונה + אישור הורה
+        let proofControl = "";
+        if (task.proofPhoto) {
+            const status = task.proofApproved
+                ? '<span class="text-[8px] text-emerald-600 font-bold">✅ אושר</span>'
+                : '<span class="text-[8px] text-amber-600 font-bold">⏳ לאישור</span>';
+            const approveBtns = (editMode && !task.proofApproved) ? `
+                <button onclick="approveProof(${task.id})" class="w-6 h-6 rounded-md bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 text-[11px] flex items-center justify-center" title="אשר">✓</button>
+                <button onclick="rejectProof(${task.id})" class="w-6 h-6 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 text-[11px] flex items-center justify-center" title="דחה">✗</button>` : "";
+            proofControl = `<div class="flex flex-col items-center gap-1">
+                <img src="${task.proofPhoto}" class="w-9 h-9 rounded-lg object-cover border border-slate-200" alt="הוכחה">
+                ${status}<div class="flex gap-1">${approveBtns}</div>
+            </div>`;
+        } else if (!editMode && !task.hidden) {
+            proofControl = `<button onclick="attachProof(${task.id})" title="צרף תמונת הוכחה" class="w-9 h-9 shrink-0 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-100 flex items-center justify-center text-base">📷</button>`;
+        }
         card.innerHTML = `
             <div class="flex items-center gap-2.5">
                 <button onclick="toggleTask(${task.id}, event)" class="w-9 h-9 shrink-0 rounded-xl border-2 text-lg flex items-center justify-center transition-all active:scale-90 ${task.completed ? 'bg-emerald-500 text-white border-emerald-500':'bg-white border-slate-300 hover:border-emerald-300'}">${task.completed ? '✓':''}</button>
@@ -135,6 +151,7 @@ export function renderTasks() {
                     <span class="text-[9px] px-1.5 py-0.5 rounded font-semibold ${daily ? 'bg-amber-50 text-amber-600' : 'bg-slate-50 text-slate-400'}">${daily ? '☀️ יומי' : '📅 שבועי'}</span>
                     ${task.rotate ? '<span class="text-[9px] px-1.5 py-0.5 rounded font-semibold bg-purple-50 text-purple-600">🔄 סבב</span>' : ''}
                 </div>
+                ${proofControl}
                 ${editControls}
             </div>
         `;

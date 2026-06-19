@@ -78,6 +78,63 @@ export function markAllRoomTasksCompleted() {
     }
 }
 
+// ===== הוכחת ביצוע בתמונה + אישור הורה =====
+// מקטין את התמונה חזק (≤360px, JPEG) כדי לא לנפח את ה-gameState המסונכרן.
+function downscaleImage(file, maxDim, quality) {
+    return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+        img.onload = () => {
+            let { width, height } = img;
+            if (width >= height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
+            else if (height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
+            const c = document.createElement('canvas'); c.width = width; c.height = height;
+            c.getContext('2d').drawImage(img, 0, 0, width, height);
+            URL.revokeObjectURL(url);
+            resolve(c.toDataURL('image/jpeg', quality));
+        };
+        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
+        img.src = url;
+    });
+}
+function findTask(taskId) {
+    let t = null;
+    gameState.rooms.forEach(r => r.tasks.forEach(x => { if (x.id === taskId) t = x; }));
+    return t;
+}
+export function attachProof(taskId) {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = 'image/*'; input.capture = 'environment';
+    input.onchange = async () => {
+        const file = input.files && input.files[0];
+        if (!file) return;
+        try {
+            const dataUrl = await downscaleImage(file, 360, 0.5);
+            const t = findTask(taskId);
+            if (!t) return;
+            t.proofPhoto = dataUrl; t.proofApproved = false;
+            saveGameState(`הוכחת ביצוע: ${t.title}`);
+            showToast('📷 הצילום נשלח', 'ההורים יאשרו את הביצוע — כל הכבוד!');
+        } catch (e) { showToast('❌ שגיאה', 'לא ניתן לטעון את התמונה.'); }
+    };
+    input.click();
+}
+export function approveProof(taskId) {
+    const t = findTask(taskId);
+    if (!t) return;
+    t.proofApproved = true;
+    if (!t.completed) { t.completed = true; t.completedAt = Date.now(); }
+    saveGameState(`אישור הוכחה: ${t.title}`);
+    showToast('✅ אושר', `"${t.title}" אושרה על ידי ההורים.`);
+}
+export function rejectProof(taskId) {
+    const t = findTask(taskId);
+    if (!t) return;
+    t.proofPhoto = null; t.proofApproved = false;
+    saveGameState(`דחיית הוכחה: ${t.title}`);
+    showToast('↩️ נדחתה', `יש לצלם שוב את "${t.title}".`);
+}
+
 // ===== מצב עריכה גלובלי (מוגן בסיסמת הורים) =====
 export let editMode = false;
 

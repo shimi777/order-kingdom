@@ -140,7 +140,7 @@ export function resetToInitial() {
     gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
     if (keepRooms) {
         gameState.rooms = keepRooms;
-        gameState.rooms.forEach(r => r.tasks.forEach(t => { t.completed = false; t.completedAt = null; }));
+        gameState.rooms.forEach(r => r.tasks.forEach(t => { t.completed = false; t.completedAt = null; t.proofPhoto = null; t.proofApproved = false; }));
     }
     if (keepRewards)   gameState.rewards100        = keepRewards;
     if (keepPrizes)    gameState.prizeOptions      = keepPrizes;
