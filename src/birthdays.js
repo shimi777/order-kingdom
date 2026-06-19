@@ -158,6 +158,7 @@ export function renderBirthdays() {
                     <button id="tree-zin"  class="w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-600 text-xl font-bold flex items-center justify-center hover:bg-slate-50">+</button>
                     <button id="tree-zout" class="w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-600 text-xl font-bold flex items-center justify-center hover:bg-slate-50">−</button>
                     <button id="tree-zreset" class="w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-500 text-base flex items-center justify-center hover:bg-slate-50" title="איפוס תצוגה">⟲</button>
+                    ${editMode ? `<button id="tree-add" class="w-9 h-9 mt-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xl font-bold shadow-sm flex items-center justify-center" title="הוספת דמות">➕</button>` : ''}
                 </div>
                 <div class="absolute top-2 right-2 text-[10px] text-slate-400 bg-white/70 rounded-lg px-2 py-1 pointer-events-none leading-tight">גררו להזזה · גלגלת/צביטה לזום<br>הקישו על דמות לפרטים · ◯ לקיפול ענף</div>
                 <div id="tree-popover" class="hidden absolute z-20 w-44 bg-white rounded-xl shadow-lg border border-slate-200 p-3 text-right"></div>
@@ -434,7 +435,10 @@ function _initTreeInteractions() {
         const dateStr = (Number.isInteger(p.day) && Number.isInteger(p.month)) ? `${p.day} ב${HEB_MONTHS[p.month - 1]}${p.year ? ' ' + p.year : ''}` : 'ללא תאריך';
         const age = nextAge(p.year, p.day, p.month);
         const ageStr = (age !== null) ? ageLabel(type, age) : '';
-        const editBtn = editMode ? `<button id="tree-pop-edit" class="mt-2 w-full py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold">✏️ עריכה</button>` : '';
+        const editBtns = editMode ? `<div class="flex gap-1.5 mt-2">
+                <button id="tree-pop-edit" class="flex-1 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold">✏️ עריכה</button>
+                <button id="tree-pop-del" class="flex-1 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 text-xs font-bold">🗑️ מחיקה</button>
+            </div>` : '';
         pop.innerHTML = `
             <div class="flex items-center justify-between gap-2 mb-1">
                 <span class="font-extrabold text-sm text-slate-800">${escapeHtml((p.emoji ? p.emoji + ' ' : '') + p.name)}</span>
@@ -443,7 +447,7 @@ function _initTreeInteractions() {
             ${p.relation ? `<div class="text-[11px] text-slate-400 font-bold mb-1">👪 ${escapeHtml(p.relation)}</div>` : ''}
             <div class="text-[11px] text-slate-500 font-bold">🗓️ ${dateStr}</div>
             ${ageStr ? `<div class="mt-1">${ageStr}</div>` : ''}
-            ${editBtn}`;
+            ${editBtns}`;
         const r = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect();
         let left = r.left - wr.left + r.width / 2 - 88;
         left = Math.max(6, Math.min(left, wr.width - 182));
@@ -453,6 +457,7 @@ function _initTreeInteractions() {
         pop.classList.remove('hidden');
         const cb = document.getElementById('tree-pop-close'); if (cb) cb.onclick = (ev) => { ev.stopPropagation(); closePop(); };
         const eb = document.getElementById('tree-pop-edit');  if (eb) eb.onclick = (ev) => { ev.stopPropagation(); closePop(); openBirthdayEditor(id); };
+        const db = document.getElementById('tree-pop-del');   if (db) db.onclick = (ev) => { ev.stopPropagation(); closePop(); deleteBirthday(id); };
     };
 
     // ----- גרירה / זום -----
@@ -496,6 +501,7 @@ function _initTreeInteractions() {
     if (zin)  zin.onclick  = () => zoomTo(st.k * 1.25, centerPt());
     if (zout) zout.onclick = () => zoomTo(st.k * 0.8,  centerPt());
     if (zr)   zr.onclick   = () => { st.x = 0; st.y = 0; st.k = 1; apply(); closePop(); };
+    const addBtn = document.getElementById('tree-add'); if (addBtn) addBtn.onclick = () => openBirthdayEditor(null);
     apply();
 }
 
