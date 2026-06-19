@@ -7,11 +7,19 @@ import { showToast } from './render.js';
 
 export function clearFilter() { gameState.selectedCharacter = null; saveGameState("ביטול סינון"); }
 
+// קורא מתוך הטופס שנשלח (לפי class), כך שגם הטופס במסך המשימות וגם הטופס
+// בקיר המעשים הטובים חולקים את אותו מטפל בלי התנגשות מזהים.
 export function submitGoodDeed(e) {
-    e.preventDefault(); const doer = document.getElementById("deed-doer").value; const desc = document.getElementById("deed-desc").value;
+    e.preventDefault();
+    const form = e.target;
+    const doerEl = form.querySelector(".deed-doer-input");
+    const descEl = form.querySelector(".deed-desc-input");
+    if (!doerEl || !descEl) return;
+    const doer = doerEl.value; const desc = descEl.value;
     if (!doer) return;
     gameState.goodDeeds.push({ id: Date.now(), doer: doer, desc: desc, points: 10 });
-    document.getElementById("deed-desc").value = "";
+    descEl.value = "";
+    doerEl.selectedIndex = 0;
     saveGameState(`מעשה חסד של ${doer}`);
 }
 

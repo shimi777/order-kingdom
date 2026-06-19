@@ -3,12 +3,13 @@
 // ===================================================================
 
 import { CHARACTERS, GRADIENT_FALLBACKS, STATIC_ROOM_IMAGES, EDITABLE_CHARS, config } from './constants.js';
+import { escapeHtml } from './util.js';
 import { gameState, saveGameState, getRoomFreshnessPct, isDaily, effectiveChar } from './state.js';
 import { editMode, openTaskEditor } from './tasks.js';
 import { renderSchedule, renderMonth, scheduleSub } from './schedule.js';
 import { updateFridayBadge } from './prizes.js';
 
-export function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderGoodDeeds(); updateProgressDOM(); updateFridayBadge(); }
+export function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderDeedsWall(); updateProgressDOM(); updateFridayBadge(); }
 
 export function renderHeroDashboards() {
     const container = document.getElementById("avatars-container");
@@ -198,14 +199,75 @@ export function updateEditButtons() {
     }
 }
 
-export function renderGoodDeeds() {
-    const feed = document.getElementById("deeds-feed"); feed.innerHTML = "";
-    if (gameState.goodDeeds.length === 0) { feed.innerHTML = `<p class="text-center text-slate-400 text-[11px]">אין מעשי חסד רשומים.</p>`; return; }
-    [...gameState.goodDeeds].reverse().forEach(d => {
+// ===== 💝 קיר מעשים טובים — הלוח החגיגי הייעודי (החליף את יומן החסדים המצומצם במסך המשימות) =====
+export function renderDeedsWall() {
+    const wall = document.getElementById("deeds-wall");
+    if (!wall) return;
+    const deeds = gameState.goodDeeds || [];
+
+    // --- סיכום: סך מעשים, סך נקודות בונוס, וספירה לכל דמות (המובילה מקבלת כתר) ---
+    const summary = document.getElementById("deeds-summary");
+    if (summary) {
+        const totalPts = deeds.reduce((s, d) => s + (d.points || 0), 0);
+        const counts = {};
+        deeds.forEach(d => { counts[d.doer] = (counts[d.doer] || 0) + 1; });
+        const ranked = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+        let chips = `
+            <div class="flex flex-col items-center justify-center px-4 py-2 rounded-2xl bg-white/70 border border-pink-100 min-w-[88px]">
+                <span class="text-2xl font-black text-rose-500">${deeds.length}</span>
+                <span class="text-[10px] text-slate-400 font-bold">מעשים טובים</span>
+            </div>
+            <div class="flex flex-col items-center justify-center px-4 py-2 rounded-2xl bg-white/70 border border-pink-100 min-w-[88px]">
+                <span class="text-2xl font-black text-rose-500">${totalPts}</span>
+                <span class="text-[10px] text-slate-400 font-bold">נקודות בונוס 🏡</span>
+            </div>`;
+        ranked.forEach((k, i) => {
+            const c = CHARACTERS[k] || { name: k, emoji: "✨", color: "from-slate-100 to-slate-200" };
+            const crown = i === 0 ? "👑 " : "";
+            chips += `
+                <div class="flex items-center gap-2 px-3 py-2 rounded-2xl bg-gradient-to-br ${c.color} border border-white/60 shadow-sm">
+                    <span class="text-xl">${c.emoji || "✨"}</span>
+                    <div class="text-right leading-tight">
+                        <div class="text-[11px] font-extrabold text-slate-700">${crown}${escapeHtml(c.name)}</div>
+                        <div class="text-[10px] text-slate-500 font-bold">${counts[k]} מעשים</div>
+                    </div>
+                </div>`;
+        });
+        summary.innerHTML = chips;
+    }
+
+    // --- הקיר עצמו: כרטיסים חגיגיים, החדש ביותר ראשון ---
+    if (deeds.length === 0) {
+        wall.innerHTML = `<div class="col-span-full text-center py-12">
+            <div class="text-5xl mb-3">💝</div>
+            <p class="text-slate-400 text-sm font-bold">עדיין אין מעשים טובים על הקיר.</p>
+            <p class="text-slate-300 text-xs mt-1">כל עזרה קטנה, ויתור או מילה טובה — מגיעים לכאן! ✨</p>
+        </div>`;
+        return;
+    }
+    wall.innerHTML = "";
+    [...deeds].reverse().forEach(d => {
+        const c = CHARACTERS[d.doer] || { name: d.doer, emoji: "✨", color: "from-slate-100 to-slate-200" };
         const editControls = editMode ? `
-            <button onclick="openGoodDeedEditor(${d.id})" class="w-6 h-6 rounded-md bg-amber-50 hover:bg-amber-100 text-amber-600 text-[11px] flex items-center justify-center border border-amber-100" title="עריכה">✏️</button>
-            <button onclick="deleteGoodDeed(${d.id})" class="w-6 h-6 rounded-md bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] flex items-center justify-center border border-rose-100" title="מחיקה">🗑️</button>` : "";
-        feed.innerHTML += `<div class="p-2 bg-white rounded-xl border flex justify-between items-center gap-2"><span class="min-w-0 truncate">✨ ${d.doer}: ${d.desc}</span><span class="flex items-center gap-1.5 shrink-0"><span class="text-rose-500 font-bold">+${d.points} 🏡</span>${editControls}</span></div>`;
+            <div class="flex gap-1.5 mt-3 pt-3 border-t border-pink-100">
+                <button onclick="openGoodDeedEditor(${d.id})" class="flex-1 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-[11px] font-bold border border-amber-100">✏️ עריכה</button>
+                <button onclick="deleteGoodDeed(${d.id})" class="flex-1 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold border border-rose-100">🗑️ מחיקה</button>
+            </div>` : "";
+        wall.innerHTML += `
+            <div class="watercolor-card p-5 border-pink-200/50 bg-gradient-to-br from-white/90 to-pink-50/40 flex flex-col">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center text-2xl bg-gradient-to-br ${c.color} border border-white shadow-sm shrink-0">${c.emoji || "✨"}</div>
+                        <div class="min-w-0">
+                            <div class="font-extrabold text-sm text-slate-800 truncate">${escapeHtml(c.name)}</div>
+                            <div class="text-[10px] text-rose-400 font-bold">עשה/תה מעשה טוב 💕</div>
+                        </div>
+                    </div>
+                    <span class="shrink-0 bg-rose-100 text-rose-600 font-black text-xs px-2.5 py-1 rounded-full">+${d.points} 🏡</span>
+                </div>
+                <p class="text-sm text-slate-700 leading-relaxed">"${escapeHtml(d.desc)}"</p>
+                ${editControls}
+            </div>`;
     });
 }
 
@@ -236,22 +298,21 @@ export function createSparkles(x, y) {
 
 // ===== מעבר בין מסכים =====
 export function switchView(name) {
-    const chores = document.getElementById("view-chores");
-    const sched  = document.getElementById("view-schedule");
-    const tabC = document.getElementById("tab-chores");
-    const tabS = document.getElementById("tab-schedule");
+    const views = { chores: "view-chores", schedule: "view-schedule", deeds: "view-deeds" };
+    const tabs  = { chores: "tab-chores",  schedule: "tab-schedule",  deeds: "tab-deeds" };
     const activeCls = "py-2 px-5 bg-amber-500 text-white border border-amber-500 rounded-2xl text-sm font-bold shadow-sm transition-all";
     const idleCls   = "py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all";
+    Object.keys(views).forEach(key => {
+        const v = document.getElementById(views[key]);
+        const t = document.getElementById(tabs[key]);
+        if (v) v.classList.toggle("hidden", key !== name);
+        if (t) t.className = (key === name) ? activeCls : idleCls;
+    });
     if (name === 'schedule') {
-        chores.classList.add("hidden");
-        sched.classList.remove("hidden");
-        tabS.className = activeCls; tabC.className = idleCls;
         renderSchedule();
         if (scheduleSub === 'monthly') renderMonth();
-    } else {
-        sched.classList.add("hidden");
-        chores.classList.remove("hidden");
-        tabC.className = activeCls; tabS.className = idleCls;
+    } else if (name === 'deeds') {
+        renderDeedsWall();
     }
 }
 

@@ -7,7 +7,7 @@
 
 import { CHARACTERS, EDIT_PW_KEY, EDITABLE_CHARS, AVATAR_CHOICES } from './constants.js';
 import { gameState, saveGameState, isDaily, nextTaskId, getRoomFreshnessPct } from './state.js';
-import { showToast, updateEditButtons, renderTasks, renderGoodDeeds, createSparkles } from './render.js';
+import { showToast, updateEditButtons, renderTasks, renderDeedsWall, createSparkles } from './render.js';
 
 export function toggleTask(taskId, event) {
     let t = null, room = null;
@@ -176,7 +176,7 @@ export function toggleGlobalEdit() {
     }
     updateEditButtons();
     renderTasks();
-    renderGoodDeeds();
+    renderDeedsWall();
 }
 
 export function openTaskEditor(taskId) {

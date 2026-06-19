@@ -106,6 +106,7 @@
     <div class="max-w-7xl mx-auto px-4 pt-2 flex justify-center gap-2">
         <button id="tab-chores" onclick="switchView('chores')" class="py-2 px-5 bg-amber-500 text-white border border-amber-500 rounded-2xl text-sm font-bold shadow-sm transition-all">🏰 ממלכת הסדר</button>
         <button id="tab-schedule" onclick="switchView('schedule')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">📅 לו״ז</button>
+        <button id="tab-deeds" onclick="switchView('deeds')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">💝 קיר מעשים טובים</button>
     </div>
 
     <header class="max-w-7xl mx-auto px-4 pt-3 pb-2">
@@ -208,7 +209,7 @@
 
                 <form id="good-deed-form" onsubmit="submitGoodDeed(event)" class="space-y-3">
                     <div>
-                        <select id="deed-doer" class="w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none">
+                        <select id="deed-doer" class="deed-doer-input w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none">
                             <option value="">מי עשה את החסד?</option>
                             <option value="הורים">שימי ונעמי</option>
                             <option value="בכורה">שקד</option>
@@ -217,16 +218,16 @@
                         </select>
                     </div>
                     <div>
-                        <input id="deed-desc" type="text" placeholder="מה קרה? (לדוגמה: ויתור מלכותי באהבה)" class="w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none" required>
+                        <input id="deed-desc" type="text" placeholder="מה קרה? (לדוגמה: ויתור מלכותי באהבה)" class="deed-desc-input w-full bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none" required>
                     </div>
                     <button type="submit" class="w-full py-2.5 px-4 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2">
                         <i class="fa-solid fa-wand-magic-sparkles"></i> שלח/י נקודות משפחתיות!
                     </button>
                 </form>
 
-                <div class="mt-5 border-t border-pink-100 pt-4">
-                    <div id="deeds-feed" class="max-h-40 overflow-y-auto custom-scrollbar space-y-2 text-xs"></div>
-                </div>
+                <button type="button" onclick="switchView('deeds')" class="w-full mt-5 py-2.5 px-3 bg-rose-50 hover:bg-rose-100 text-rose-500 font-bold rounded-xl text-xs transition-colors border border-rose-100">
+                    💝 צפו בכל המעשים הטובים בקיר ←
+                </button>
             </div>
 
         </section>
@@ -381,6 +382,38 @@
         </div>
 
     </div><!-- /view-schedule -->
+
+    <div id="view-deeds" class="hidden max-w-7xl mx-auto px-4 mt-6 flex flex-col gap-6">
+
+        <!-- כותרת + סיכום + הוספת מעשה טוב -->
+        <div class="watercolor-card p-6 border-pink-200/50 bg-gradient-to-br from-white/85 to-pink-50/40">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-3xl">💝</span>
+                <h2 class="text-2xl font-extrabold text-rose-700">קיר המעשים הטובים</h2>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">כל מעשה טוב, עזרה ספונטנית או מילה חמה — נחגג כאן ומעניק נקודות משפחתיות בונוס! ✨</p>
+
+            <div id="deeds-summary" class="flex flex-wrap items-center gap-2 mb-5"></div>
+
+            <form onsubmit="submitGoodDeed(event)" class="flex flex-col sm:flex-row gap-2">
+                <select class="deed-doer-input sm:w-44 bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none">
+                    <option value="">מי עשה את החסד?</option>
+                    <option value="הורים">שימי ונעמי</option>
+                    <option value="בכורה">שקד</option>
+                    <option value="ילד">נווה דוד</option>
+                    <option value="פעוטה">ארבל</option>
+                </select>
+                <input class="deed-desc-input flex-1 bg-white/90 border border-pink-200 rounded-xl py-2 px-3 text-xs focus:outline-none" type="text" placeholder="מה קרה? (לדוגמה: ויתור מלכותי באהבה)" required>
+                <button type="submit" class="py-2.5 px-5 bg-gradient-to-r from-pink-400 to-rose-400 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 whitespace-nowrap">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> הוסף לקיר!
+                </button>
+            </form>
+        </div>
+
+        <!-- הקיר -->
+        <div id="deeds-wall" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+    </div><!-- /view-deeds -->
 
     <div id="date-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 relative">
