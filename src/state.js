@@ -143,6 +143,23 @@ export function ensureGameDefaults() {
         });
         gameState.birthdaysSeedV4 = true;
     }
+    // נרמול יחסים למזהי-קשר (sex/spouseId/parentIds) — מקור-אמת מבני יחיד.
+    // מסנכרן את הקשרים מברירת המחדל לרשומות הקיימות; relation הופך לתווית נגזרת,
+    // ולכן מאופס לערך ברירת המחדל (ריק = ייגזר, או עקיפה ידנית כמו "כלב"/"בני זוג").
+    if (!gameState.birthdaysSeedV5) {
+        const byId = new Map(gameState.birthdays.map(b => [b.id, b]));
+        DEFAULT_BIRTHDAYS.forEach(def => {
+            const cur = byId.get(def.id);
+            if (!cur) { gameState.birthdays.push(JSON.parse(JSON.stringify(def))); return; }
+            cur.sex       = (def.sex !== undefined) ? def.sex : (cur.sex ?? null);
+            cur.spouseId  = (def.spouseId !== undefined) ? def.spouseId : (cur.spouseId ?? null);
+            cur.parentIds = Array.isArray(def.parentIds) ? def.parentIds.slice() : (cur.parentIds || []);
+            if (def.coupleIds) cur.coupleIds = def.coupleIds.slice();
+            if (def.divorced)  cur.divorced  = true;
+            cur.relation  = def.relation || "";   // תווית נגזרת מעתה (ריק) או עקיפה מהזרע
+        });
+        gameState.birthdaysSeedV5 = true;
+    }
 }
 
 // איפוס שבועי — שומר על המשימות והפרסים שההורים הגדירו, מאפס רק השלמות וניקוד
