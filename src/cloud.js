@@ -70,6 +70,7 @@ export async function cloudLoad() {
     _lastVersion = row.updated_at;
     const st = row.state;
     if (!st || Object.keys(st).length === 0) return { state: null, version: row.updated_at };
+    try { _lastPushedJson = JSON.stringify(st); } catch (e) { /* ignore */ }   // baseline: don't echo loaded state back
     return { state: st, version: row.updated_at };
 }
 
@@ -85,7 +86,10 @@ export async function savePushSubscription(sub) {
 
 // Debounced, fire-and-forget push of the latest state. Coalesces the
 // rapid save+persist bursts the app produces into a single round-trip.
-let _pushTimer = null, _pendingState = null;
+// _lastPushedJson is the serialized blob of our last *successful* push — used
+// as a diff-guard so identical state isn't re-uploaded (saves bandwidth, and
+// avoids re-sending the whole blob — incl. photo data-URLs — on no-op saves).
+let _pushTimer = null, _pendingState = null, _lastPushedJson = null;
 export function cloudPush(stateObj) {
     if (!_pass || !cloudConfigured()) return;   // not set up -> silent no-op
     _pendingState = stateObj;
@@ -95,9 +99,13 @@ export function cloudPush(stateObj) {
 async function _flushPush() {
     const st = _pendingState; _pendingState = null;
     if (!st) return;
+    let json = null;
+    try { json = JSON.stringify(st); } catch (e) { /* circular? fall through and push */ }
+    if (json !== null && json === _lastPushedJson) return;   // ללא שינוי — דילוג על העלאה מיותרת
     try {
         const v = await rpc('kingdom_save', { p_pass: _pass, p_state: st });
-        _lastVersion = v;   // remember our own write so polling won't echo it
+        _lastVersion = v;          // remember our own write so polling won't echo it
+        _lastPushedJson = json;    // remember what we sent so identical saves skip
     } catch (e) { /* offline / transient — next save or poll will recover */ }
 }
 
