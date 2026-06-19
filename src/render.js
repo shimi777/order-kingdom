@@ -8,8 +8,9 @@ import { gameState, saveGameState, getRoomFreshnessPct, isDaily, effectiveChar }
 import { editMode, openTaskEditor } from './tasks.js';
 import { renderSchedule, renderMonth, scheduleSub } from './schedule.js';
 import { updateFridayBadge } from './prizes.js';
+import { renderBirthdays } from './birthdays.js';
 
-export function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderDeedsWall(); updateProgressDOM(); updateFridayBadge(); }
+export function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderDeedsWall(); renderBirthdays(); updateProgressDOM(); updateFridayBadge(); }
 
 export function renderHeroDashboards() {
     const container = document.getElementById("avatars-container");
@@ -309,8 +310,8 @@ export function createSparkles(x, y) {
 
 // ===== מעבר בין מסכים =====
 export function switchView(name) {
-    const views = { chores: "view-chores", schedule: "view-schedule", deeds: "view-deeds" };
-    const tabs  = { chores: "tab-chores",  schedule: "tab-schedule",  deeds: "tab-deeds" };
+    const views = { chores: "view-chores", schedule: "view-schedule", deeds: "view-deeds", birthdays: "view-birthdays" };
+    const tabs  = { chores: "tab-chores",  schedule: "tab-schedule",  deeds: "tab-deeds",  birthdays: "tab-birthdays" };
     const activeCls = "py-2 px-5 bg-amber-500 text-white border border-amber-500 rounded-2xl text-sm font-bold shadow-sm transition-all";
     const idleCls   = "py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all";
     Object.keys(views).forEach(key => {
@@ -324,6 +325,8 @@ export function switchView(name) {
         if (scheduleSub === 'monthly') renderMonth();
     } else if (name === 'deeds') {
         renderDeedsWall();
+    } else if (name === 'birthdays') {
+        renderBirthdays();
     }
 }
 

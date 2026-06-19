@@ -171,6 +171,17 @@ export function renderMonth() {
     const todayKey = dateKey(new Date());
     const events = gameState.datedEvents || {};
 
+    // 🗓️ מועדים — מפתח "חודש-יום" → מערך { name, emoji, cls } (חוזרים מדי שנה)
+    const bdayByKey = {};
+    (gameState.birthdays || []).forEach(b => {
+        if (!Number.isInteger(b.day) || !Number.isInteger(b.month)) return;
+        const k = `${b.month}-${b.day}`;
+        const type = b.type || 'birthday';
+        const emoji = type === 'anniversary' ? '💍' : type === 'memorial' ? '🕯️' : '🎂';
+        const cls   = type === 'anniversary' ? 'text-rose-700 bg-rose-50' : type === 'memorial' ? 'text-slate-500 bg-slate-50' : 'text-pink-700 bg-pink-50';
+        (bdayByKey[k] = bdayByKey[k] || []).push({ id: b.id, name: b.name, emoji, cls });
+    });
+
     let cells = "";
     for (let i = 0; i < startDay; i++) cells += `<div class="aspect-square"></div>`;
     for (let day = 1; day <= daysInMonth; day++) {
@@ -179,6 +190,10 @@ export function renderMonth() {
         const isToday = key === todayKey;
         const lines = ev ? ev.split("\n").filter(l => l.trim()) : [];
         let preview = "";
+        // מועדים מיוחדים קודם — צ'יפ צבעוני ולחיץ (לחיצה פותחת את עורך המועד)
+        (bdayByKey[`${month + 1}-${day}`] || []).forEach(({ id, name, emoji, cls }) => {
+            preview += `<div onclick="event.stopPropagation(); openBirthdayEditor(${id})" title="עריכת מועד" class="text-[8px] leading-tight rounded px-1 mb-0.5 truncate cursor-pointer hover:brightness-95 ${cls}">${emoji} ${escapeHtml(name)}</div>`;
+        });
         lines.slice(0, 2).forEach(l => {
             preview += `<div class="text-[8px] leading-tight text-amber-800 bg-amber-50 rounded px-1 mb-0.5 truncate">${escapeHtml(l)}</div>`;
         });

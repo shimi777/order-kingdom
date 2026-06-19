@@ -8,6 +8,7 @@
 import { CHARACTERS, EDIT_PW_KEY, EDITABLE_CHARS, AVATAR_CHOICES } from './constants.js';
 import { gameState, saveGameState, isDaily, nextTaskId, getRoomFreshnessPct } from './state.js';
 import { showToast, updateEditButtons, renderTasks, renderDeedsWall, createSparkles } from './render.js';
+import { downscaleImage } from './util.js';
 
 export function toggleTask(taskId, event) {
     let t = null, room = null;
@@ -79,24 +80,7 @@ export function markAllRoomTasksCompleted() {
 }
 
 // ===== הוכחת ביצוע בתמונה + אישור הורה =====
-// מקטין את התמונה חזק (≤360px, JPEG) כדי לא לנפח את ה-gameState המסונכרן.
-function downscaleImage(file, maxDim, quality) {
-    return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => {
-            let { width, height } = img;
-            if (width >= height && width > maxDim) { height = Math.round(height * maxDim / width); width = maxDim; }
-            else if (height > maxDim) { width = Math.round(width * maxDim / height); height = maxDim; }
-            const c = document.createElement('canvas'); c.width = width; c.height = height;
-            c.getContext('2d').drawImage(img, 0, 0, width, height);
-            URL.revokeObjectURL(url);
-            resolve(c.toDataURL('image/jpeg', quality));
-        };
-        img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
-        img.src = url;
-    });
-}
+// (downscaleImage עבר ל-util.js — משותף עם תמונות ימי הולדת)
 function findTask(taskId) {
     let t = null;
     gameState.rooms.forEach(r => r.tasks.forEach(x => { if (x.id === taskId) t = x; }));

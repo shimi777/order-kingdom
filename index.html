@@ -107,6 +107,7 @@
         <button id="tab-chores" onclick="switchView('chores')" class="py-2 px-5 bg-amber-500 text-white border border-amber-500 rounded-2xl text-sm font-bold shadow-sm transition-all">🏰 ממלכת הסדר</button>
         <button id="tab-schedule" onclick="switchView('schedule')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">📅 לו״ז</button>
         <button id="tab-deeds" onclick="switchView('deeds')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">💝 קיר מעשים טובים</button>
+        <button id="tab-birthdays" onclick="switchView('birthdays')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">🗓️ מועדים</button>
     </div>
 
     <header class="max-w-7xl mx-auto px-4 pt-3 pb-2">
@@ -415,6 +416,34 @@
 
     </div><!-- /view-deeds -->
 
+    <div id="view-birthdays" class="hidden max-w-7xl mx-auto px-4 mt-6 flex flex-col gap-6">
+
+        <!-- כותרת + הוספת מועד -->
+        <div class="watercolor-card p-6 border-amber-200/50 bg-gradient-to-br from-white/85 to-amber-50/40">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+                <div>
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="text-3xl">🗓️</span>
+                        <h2 class="text-2xl font-extrabold text-amber-800">המועדים שלנו</h2>
+                    </div>
+                    <p class="text-xs text-slate-400">ימי הולדת 🎂, יום נישואין 💍, ימי זיכרון 🕯️ — עם תמונה או אווטאר, ספירה לאחור וגיל. מופיעים בלוח החודשי! ✨</p>
+                </div>
+                <div class="flex gap-2 flex-wrap justify-end">
+                    <button id="birthday-import-csv-btn" onclick="importBirthdaysFromCSV()" class="hidden py-2 px-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-bold rounded-xl text-xs flex items-center gap-1.5 whitespace-nowrap shadow-sm">
+                        📤 ייבוא CSV
+                    </button>
+                    <button onclick="openBirthdayEditor(null)" class="py-2.5 px-5 bg-gradient-to-r from-amber-400 to-pink-400 text-white font-bold rounded-xl text-xs flex items-center gap-2 whitespace-nowrap shadow-sm">
+                        ➕ הוסף מועד
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- הרשימה -->
+        <div id="birthdays-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+    </div><!-- /view-birthdays -->
+
     <div id="date-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 relative">
             <div class="flex items-center justify-between mb-4">
@@ -426,6 +455,54 @@
             <div class="flex gap-3 mt-5">
                 <button onclick="saveDateEditor()" class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 שמירה</button>
                 <button onclick="closeDateEditor()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="birthday-editor-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4">
+                <h3 id="birthday-editor-title" class="text-xl font-black text-amber-800">➕ יום הולדת חדש</h3>
+                <button onclick="closeBirthdayEditor()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">✕</button>
+            </div>
+            <input type="hidden" id="birthday-edit-id">
+            <div class="space-y-3">
+                <!-- סוג המועד -->
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">סוג מועד</label>
+                    <div id="birthday-edit-type" class="flex gap-2"></div>
+                </div>
+                <!-- תצוגה מקדימה + העלאת תמונה -->
+                <div class="flex items-center gap-4">
+                    <div id="birthday-edit-preview" class="text-center"></div>
+                    <button type="button" onclick="pickBirthdayPhoto()" class="py-2 px-3 bg-sky-50 hover:bg-sky-100 text-sky-600 border border-sky-100 rounded-xl text-xs font-bold">📷 העלאת תמונה</button>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">שם</label>
+                    <input id="birthday-edit-name" type="text" placeholder="לדוגמה: סבתא רותי" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">יום</label>
+                        <input id="birthday-edit-day" type="number" min="1" max="31" placeholder="15" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">חודש</label>
+                        <select id="birthday-edit-month" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-amber-300"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 mb-1">שנה <span class="text-slate-300">(לא חובה)</span></label>
+                        <input id="birthday-edit-year" type="number" min="1900" max="2100" placeholder="2015" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 mb-1">בחרו אווטאר (אם אין תמונה)</label>
+                    <div id="birthday-edit-avatars" class="grid grid-cols-8 gap-1"></div>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-5">
+                <button onclick="saveBirthdayEditor()" class="flex-1 py-2.5 px-4 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm">💾 שמירה</button>
+                <button onclick="closeBirthdayEditor()" class="py-2.5 px-4 bg-slate-100 text-slate-600 font-bold rounded-xl text-sm">ביטול</button>
             </div>
         </div>
     </div>

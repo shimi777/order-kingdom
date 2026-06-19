@@ -5,7 +5,7 @@
 // ===================================================================
 
 import {
-    INITIAL_STATE, DEFAULT_REWARDS_100, DEFAULT_PRIZE_OPTIONS, DEFAULT_DINNER_OPTIONS,
+    INITIAL_STATE, DEFAULT_REWARDS_100, DEFAULT_PRIZE_OPTIONS, DEFAULT_DINNER_OPTIONS, DEFAULT_BIRTHDAYS,
     DAILY_TASK_IDS, DAY_MS, WEEK_MS, PERSONAL_ROOMS, EDITABLE_CHARS, ROTATION_CHARS, config
 } from './constants.js';
 // Runtime-only cross-module calls (safe cycles): render + sync.
@@ -125,6 +125,23 @@ export function ensureGameDefaults() {
     if (!gameState.datedEvents)  gameState.datedEvents  = {};
     // ===== תפריט ארוחות ערב =====
     if (!gameState.dinnerOptions) gameState.dinnerOptions = DEFAULT_DINNER_OPTIONS.slice();
+    // ===== ימי הולדת =====
+    if (!gameState.birthdays) gameState.birthdays = JSON.parse(JSON.stringify(DEFAULT_BIRTHDAYS));
+    // טעינה חד-פעמית של בני המשפחה המורחבים: משלימה אנשים חסרים וממלאת תאריכים שטרם הוזנו,
+    // בלי לדרוס שמות/אווטרים/תאריכים שההורים ערכו ידנית. רץ פעם אחת בלבד (דגל birthdaysSeedV2).
+    if (!gameState.birthdaysSeedV3) {
+        const byId = new Map(gameState.birthdays.map(b => [b.id, b]));
+        DEFAULT_BIRTHDAYS.forEach(def => {
+            const cur = byId.get(def.id);
+            if (!cur) {
+                gameState.birthdays.push(JSON.parse(JSON.stringify(def)));
+            } else if (!Number.isInteger(cur.day) || !Number.isInteger(cur.month)) {
+                cur.day = def.day; cur.month = def.month; cur.year = def.year;
+                if (!cur.type) cur.type = def.type;
+            }
+        });
+        gameState.birthdaysSeedV3 = true;
+    }
 }
 
 // איפוס שבועי — שומר על המשימות והפרסים שההורים הגדירו, מאפס רק השלמות וניקוד
@@ -137,6 +154,7 @@ export function resetToInitial() {
     const keepEvents    = gameState.datedEvents;      // אירועי הלוח החודשי שורדים איפוס
     const keepDinnerOpts = gameState.dinnerOptions;   // תפריט ארוחות הערב שורד איפוס
     const keepOverrides = gameState.characterOverrides; // אווטארים/שמות שורדים איפוס
+    const keepBirthdays = gameState.birthdays;         // ימי הולדת שורדים איפוס
     gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
     if (keepRooms) {
         gameState.rooms = keepRooms;
@@ -149,6 +167,7 @@ export function resetToInitial() {
     if (keepEvents)    gameState.datedEvents       = keepEvents;
     if (keepDinnerOpts) gameState.dinnerOptions    = keepDinnerOpts;
     if (keepOverrides) gameState.characterOverrides = keepOverrides;
+    if (keepBirthdays) gameState.birthdays         = keepBirthdays;
     ensureGameDefaults();
 }
 

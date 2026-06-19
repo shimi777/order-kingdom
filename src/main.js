@@ -15,6 +15,7 @@ import * as prizes from './prizes.js';
 import * as sync from './sync.js';
 import * as rooms from './rooms.js';
 import * as cloud from './cloud.js';
+import * as birthdays from './birthdays.js';
 import { renderDailySaying } from './daily-saying.js';
 import { renderReminder, enableReminders } from './reminders.js';
 
@@ -50,6 +51,15 @@ Object.assign(window, {
     closeGoodDeedEditor: rooms.closeGoodDeedEditor,
     saveGoodDeedEditor: rooms.saveGoodDeedEditor,
     deleteGoodDeed: rooms.deleteGoodDeed,
+    // birthdays.js
+    openBirthdayEditor: birthdays.openBirthdayEditor,
+    closeBirthdayEditor: birthdays.closeBirthdayEditor,
+    saveBirthdayEditor: birthdays.saveBirthdayEditor,
+    deleteBirthday: birthdays.deleteBirthday,
+    pickBirthdayAvatar: birthdays.pickBirthdayAvatar,
+    pickBirthdayPhoto: birthdays.pickBirthdayPhoto,
+    setBirthdayType: birthdays.setBirthdayType,
+    importBirthdaysFromCSV: birthdays.importBirthdaysFromCSV,
     // state.js
     saveScriptUrl: state.saveScriptUrl,
     // sync.js
@@ -93,6 +103,8 @@ Object.assign(window, {
 // charEditStaging must exist on window before any character-editor render runs;
 // it is reassigned by openCharacterEditor and mutated by an inline oninput handler.
 window.charEditStaging = {};
+// birthdayEditStaging — reassigned by openBirthdayEditor, read by inline avatar/photo handlers.
+window.birthdayEditStaging = {};
 
 // ---- init: faithful port of the original window.onload (+ setInterval) ----
 function init() {
