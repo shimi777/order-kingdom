@@ -5,9 +5,20 @@
 // (Closed-app push is a separate, optional backend — see supabase/push/.)
 // ===================================================================
 
+import { config } from './constants.js';
 import { gameState, isDaily } from './state.js';
 import { showToast } from './render.js';
 import { subscribePush } from './push.js';
+
+// מכשירים שכבר אישרו התראות בעבר — לרשום אותם לדחיפה פעם אחת לאחר שהוגדר VAPID.
+let _pushTried = false;
+function ensurePushSubscribed() {
+    if (_pushTried) return;
+    if (!config.vapidPublicKey) return;
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    _pushTried = true;
+    subscribePush();
+}
 
 const TONES = {
     amber:   'from-amber-100 to-amber-50 border-amber-200 text-amber-800',
@@ -57,6 +68,7 @@ export function renderReminder() {
     el.classList.remove('hidden');
 
     maybeNotify(r.actionable, r.text);
+    ensurePushSubscribed();
 }
 
 // התראת מערכת מקומית — לכל היותר פעם ביום, ורק אם יש משהו לעשות.
