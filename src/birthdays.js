@@ -29,19 +29,53 @@ try {
     if (Array.isArray(s)) treeCollapsed = new Set(s);
 } catch (e) {}
 
-// מודל קשרים לצורך הדגשה (בני זוג + הורים→ילדים)
-const TREE_COUPLES = [[7,8],[9,10],[4,5],[11,12],[14,15]];
-const TREE_PARENTS = [
-    [[7,8],[11,4,14,13,16]], [[9,10],[18,5,17,20,19]], [[4,5],[1,2,3,6]],
-    [[11,12],[24,25,23]], [[14,15],[26,27,28]], [[22],[15]],
-];
+// ===== קשרים מנורמלים: מקור-האמת הוא sex/spouseId/parentIds על כל רשומה =====
+// משק הבית (שורש לחישוב תוויות הקשר): שימי + נעמי
+const FAM_ROOT = [4, 5];
+
+// גוזר {kind, color, label} לאדם מתוך הקשרים המבניים (label ניתן לעקיפה ידנית ב-relation)
+function _kin(p, all) {
+    all = all || gameState.birthdays || [];
+    const byId = new Map(all.map(x => [x.id, x]));
+    const sex = p.sex;
+    const g = (m, f) => sex === 'f' ? f : sex === 'm' ? m : (m + '/' + f);
+    const par = p.parentIds || [];
+    const same = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+    const parentsOf = id => (byId.get(id) || {}).parentIds || [];
+    const override = (p.relation && p.relation.trim()) ? p.relation.trim() : null;
+
+    let kind = 'other', color = 'gray', label = g('בן משפחה', 'בת משפחה');
+    if (p.id === 4) { kind = 'dad'; color = 'blue'; label = 'אבא'; }
+    else if (p.id === 5) { kind = 'mom'; color = 'green'; label = 'אמא'; }
+    else if (par.length && par.every(x => FAM_ROOT.includes(x))) { kind = 'child'; color = 'amber'; label = g('בן', 'בת'); }
+    else if (byId.get(4) && parentsOf(4).includes(p.id)) { kind = 'patGP'; color = 'blue'; label = g('סבא', 'סבתא'); }
+    else if (byId.get(5) && parentsOf(5).includes(p.id)) { kind = 'matGP'; color = 'green'; label = g('סבא', 'סבתא') + ' (' + g('אבא', 'אמא') + ' של נעמי)'; }
+    else if (parentsOf(4).length && par.length && same(par, parentsOf(4))) { kind = 'patSib'; color = 'blue'; label = g('דוד', 'דודה') + ' (' + g('אח', 'אחות') + ' של שימי)'; }
+    else if (parentsOf(5).length && par.length && same(par, parentsOf(5))) { kind = 'matSib'; color = 'green'; label = g('דוד', 'דודה') + ' (' + g('אח', 'אחות') + ' של נעמי)'; }
+    else {
+        const sp = p.spouseId ? byId.get(p.spouseId) : null;
+        const spPar = sp ? (sp.parentIds || []) : [];
+        const spSib = sp && ((parentsOf(4).length && same(spPar, parentsOf(4))) || (parentsOf(5).length && same(spPar, parentsOf(5))));
+        const parentIsUncle = par.some(pid => { const mp = parentsOf(pid); return mp.length && (same(mp, parentsOf(4)) || same(mp, parentsOf(5))); });
+        if (spSib) { kind = 'spouseIn'; color = 'gray'; label = g('דוד', 'דודה') + ' (' + g('בעל', 'אשת') + ' ' + sp.name + ')'; }
+        else if (parentIsUncle) { kind = 'cousin'; color = 'amber'; label = 'ה' + g('בן', 'בת') + ' של ' + par.map(pid => (byId.get(pid) || {}).name).filter(Boolean).join(' ו'); }
+    }
+    if (override) label = override;
+    return { kind, color, label };
+}
+
+// תווית קשר לתצוגה (נגזרת או עקיפה ידנית)
+function deriveRelation(p, all) { return _kin(p, all).label; }
+
+// קבוצת הקשורים ישירות (בן/בת זוג + הורים + ילדים) — להדגשה בעץ
 function _treeRelated(id) {
+    const all = gameState.birthdays || [];
+    const p = all.find(x => x.id === id);
     const set = new Set([id]);
-    TREE_COUPLES.forEach(c => { if (c.includes(id)) c.forEach(x => set.add(x)); });
-    TREE_PARENTS.forEach(([par, ch]) => {
-        if (par.includes(id)) ch.forEach(x => set.add(x));
-        if (ch.includes(id)) par.forEach(x => set.add(x));
-    });
+    if (!p) return set;
+    if (p.spouseId) set.add(p.spouseId);
+    (p.parentIds || []).forEach(x => set.add(x));
+    all.forEach(x => { if ((x.parentIds || []).includes(id)) set.add(x.id); });
     return set;
 }
 
@@ -199,8 +233,9 @@ function _cardHTML(b) {
 
     const ageLine = (age !== null && hasDate(b)) ? ageLabel(type, age) : "";
     const badge   = `<span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white/60 border border-slate-100 text-slate-400">${info.emoji} ${info.label}</span>`;
-    const relLine = b.relation
-        ? `<div class="text-[11px] text-slate-400 font-bold mt-0.5">👪 ${escapeHtml(b.relation)}</div>` : "";
+    const relText = (type === 'anniversary') ? (b.relation || '') : deriveRelation(b);
+    const relLine = relText
+        ? `<div class="text-[11px] text-slate-400 font-bold mt-0.5">👪 ${escapeHtml(relText)}</div>` : "";
 
     const cardCls = today
         ? `watercolor-card p-5 ${sty.todayBorder} bg-gradient-to-br ${sty.todayBg} ${sty.todayRing} flex flex-col`
@@ -248,10 +283,10 @@ function _familyTreeSVG() {
     const used = new Set();
     const idCx = {};
 
-    const node = (id, cx, top, w, h, fs, ck, focal) => {
+    const node = (id, cx, top, w, h, fs, focal) => {
         used.add(id); idCx[id] = cx;
-        const p = byId.get(id) || { name: '?', year: null, emoji: '❓' };
-        const col = C[ck];
+        const p = byId.get(id) || { name: '?', year: null, emoji: '❓', id };
+        const col = C[_kin(p).color] || C.gray;
         const x = cx - w / 2, sw = focal ? 2.6 : 1.4;
         const nm = escapeHtml((p.emoji ? p.emoji + ' ' : '') + (p.name || '?'));
         const estW = nm.length * fs * 0.6;
@@ -271,105 +306,100 @@ function _familyTreeSVG() {
     const toggle = (key, x, y) => `<g class="tree-toggle" data-grp="${key}" style="cursor:pointer"><circle cx="${x}" cy="${y}" r="8" fill="#fff" stroke="#B4B2A9" stroke-width="1.2"/><text x="${x}" y="${y + 4}" text-anchor="middle" font-size="13" font-weight="700" fill="#5F5E5A" data-tgl="${key}">−</text></g>`;
 
     // ---- מידות ----
-    const BW = 116, BH = 42, CG = 12;   // קופסת דור-2 + מרווח פנימי בזוג
-    const GW = 120, GH = 42;             // סבים
-    const KW = 80,  KH = 40, KP = 92;   // ילדים (רוחב, גובה, מרחק)
-    const UG = 30;                       // מרווח בין יחידות
+    const BW = 116, BH = 42, CG = 12, GW = 120, GH = 42, KW = 80, KH = 40, KP = 92, UG = 30;
     const yGP = 60, yBus = 170, yG2 = 214, yK = 360;
     const coupleW = 2 * BW + CG;
     const kidsW = n => n ? n * KP - (KP - KW) : 0;
+    const all = gameState.birthdays || [];
+    const sameSet = (a, b) => a.length === b.length && a.every(x => b.includes(x));
+    const childrenOf = (a, b) => all.filter(x => (x.type || 'birthday') !== 'anniversary' && (x.parentIds || []).includes(a) && (b == null || (x.parentIds || []).includes(b))).map(x => x.id);
 
-    // יחידות משמאל לימין. couple=[שמאל,ימין]; pat/mat=מי מתחבר לסבים; ckey=מפתח קיפול
-    const UNITS = [
-        { couple: [11, 12], pat: 11, kids: [24, 25, 23], ckey: 'k_zohar', colors: ['blue', 'gray'] },
-        { single: 16, pat: 16, colors: ['blue'] },
-        { couple: [14, 15], pat: 14, kids: [26, 27, 28], ckey: 'k_uria', colors: ['blue', 'gray'], ariela: 22 },
-        { single: 13, pat: 13, colors: ['blue'] },
-        { couple: [4, 5], pat: 4, mat: 5, kids: [1, 2, 3, 6], ckey: 'k_home', colors: ['blue', 'green'], focal: true },
-        { single: 18, mat: 18, colors: ['green'] },
-        { single: 17, mat: 17, colors: ['green'] },
-        { single: 20, mat: 20, colors: ['green'] },
-        { single: 19, mat: 19, colors: ['green'] },
-    ];
+    // סדר דור-2 משמאל לימין (פריסה בלבד) — בן/בת הזוג והילדים נגזרים מהנתונים
+    const ORDER = [11, 16, 14, 13, 4, 18, 17, 20, 19];
+    const UNITS = ORDER.filter(id => byId.has(id)).map(pid => {
+        const p = byId.get(pid);
+        const spId = (p.spouseId && byId.has(p.spouseId)) ? p.spouseId : null;
+        return { primary: pid, spouse: spId, kids: childrenOf(pid, spId), ckey: 'k_' + pid };
+    });
 
     let cursor = 60;
     UNITS.forEach(u => {
-        const uw = u.couple ? coupleW : BW;
-        const kw = u.kids ? kidsW(u.kids.length) : 0;
-        u.slot = Math.max(uw, kw);
+        u.slot = Math.max(u.spouse ? coupleW : BW, kidsW(u.kids.length));
         u.cx = cursor + u.slot / 2;
         cursor += u.slot + UG;
     });
     const totalW = Math.round(cursor - UG + 60);
 
-    let boxes = '', kids = '', toggles = '', d = '';
-    const patC = [], matC = [];
+    let boxes = '', kids = '', toggles = '', d = '', above = '';
 
     UNITS.forEach(u => {
-        if (u.couple) {
-            const lx = u.cx - (BW + CG) / 2, rx = u.cx + (BW + CG) / 2;
-            const [lid, rid] = u.couple;
-            boxes += node(lid, lx, yG2, BW, BH, 12, u.colors[0], u.focal);
-            boxes += node(rid, rx, yG2, BW, BH, 12, u.colors[1], u.focal);
+        if (u.spouse) {
+            const lx = u.cx - (BW + CG) / 2, rx = u.cx + (BW + CG) / 2, focal = (u.primary === 4);
+            boxes += node(u.primary, lx, yG2, BW, BH, 12, focal) + node(u.spouse, rx, yG2, BW, BH, 12, focal);
             d += line(lx + BW / 2, yG2 + BH / 2, rx - BW / 2, yG2 + BH / 2) + heart(u.cx, yG2 + BH / 2 + 4);
-            if (u.pat) patC.push(idCx[u.pat]);
-            if (u.mat) matC.push(idCx[u.mat]);
-            if (u.kids) {
-                const n = u.kids.length, start = u.cx - (n - 1) * KP / 2;
-                let g = `<g data-collapse="${u.ckey}">` + line(u.cx, yG2 + BH, u.cx, yK - 12) + line(start, yK - 12, start + (n - 1) * KP, yK - 12);
-                u.kids.forEach((kid, i) => { const kx = start + i * KP; g += line(kx, yK - 12, kx, yK) + node(kid, kx, yK, KW, KH, 12, 'amber'); });
-                kids += g + `</g>`;
-                toggles += toggle(u.ckey, rx + BW / 2 + 14, yG2 + BH / 2);
-            }
-            if (u.ariela) {
-                boxes += node(u.ariela, rx, 116, 124, 36, 11, 'gray');
-                d += line(rx, 152, rx, yG2);
-            }
         } else {
-            boxes += node(u.single, u.cx, yG2, BW, BH, 12, u.colors[0]);
-            if (u.pat) patC.push(idCx[u.single]);
-            if (u.mat) matC.push(idCx[u.single]);
+            boxes += node(u.primary, u.cx, yG2, BW, BH, 12, false);
+        }
+        if (u.kids.length) {
+            const n = u.kids.length, start = u.cx - (n - 1) * KP / 2;
+            let g = `<g data-collapse="${u.ckey}">` + line(u.cx, yG2 + BH, u.cx, yK - 12) + line(start, yK - 12, start + (n - 1) * KP, yK - 12);
+            u.kids.forEach((kid, i) => { const kx = start + i * KP; g += line(kx, yK - 12, kx, yK) + node(kid, kx, yK, KW, KH, 12, false); });
+            kids += g + `</g>`;
+            toggles += toggle(u.ckey, (u.spouse ? u.cx + (BW + CG) / 2 : u.cx + BW / 2) + 14, yG2 + BH / 2);
         }
     });
 
-    // ---- סבים + אוטובוסים מחברים לילדיהם ----
-    const gpCouple = (a, b, mid, ck, divorced) => {
+    // ---- סבים: ילדי כל זוג נגזרים מהנתונים ----
+    const gpCouple = (a, b, mid, divorced) => {
         const lx = mid - (GW + CG) / 2, rx = mid + (GW + CG) / 2;
-        let s = node(a, lx, yGP, GW, GH, 13, ck) + node(b, rx, yGP, GW, GH, 13, ck);
+        let s = node(a, lx, yGP, GW, GH, 13, false) + node(b, rx, yGP, GW, GH, 13, false);
         s += line(lx + GW / 2, yGP + GH / 2, rx - GW / 2, yGP + GH / 2);
-        if (divorced) {
-            s += `<line x1="${mid - 3}" y1="${yGP + GH / 2 + 7}" x2="${mid + 3}" y2="${yGP + GH / 2 - 7}" stroke="#A32D2D" stroke-width="1.7"/><line x1="${mid + 1}" y1="${yGP + GH / 2 + 7}" x2="${mid + 7}" y2="${yGP + GH / 2 - 7}" stroke="#A32D2D" stroke-width="1.7"/>`;
-        } else {
-            s += heart(mid, yGP + GH / 2 + 4);
-        }
+        if (divorced) s += `<line x1="${mid - 3}" y1="${yGP + GH / 2 + 7}" x2="${mid + 3}" y2="${yGP + GH / 2 - 7}" stroke="#A32D2D" stroke-width="1.7"/><line x1="${mid + 1}" y1="${yGP + GH / 2 + 7}" x2="${mid + 7}" y2="${yGP + GH / 2 - 7}" stroke="#A32D2D" stroke-width="1.7"/>`;
+        else s += heart(mid, yGP + GH / 2 + 4);
         return s;
     };
     const bus = (centers, gpMid) => {
+        if (!centers.length) return '';
         const mn = Math.min(...centers), mx = Math.max(...centers);
         let s = line(mn, yBus, mx, yBus) + line(gpMid, yGP + GH, gpMid, yBus);
         centers.forEach(x => s += line(x, yBus, x, yG2));
         return s;
     };
-    const patMid = (Math.min(...patC) + Math.max(...patC)) / 2;
-    const matMid = (Math.min(...matC) + Math.max(...matC)) / 2;
-    boxes += gpCouple(7, 8, patMid, 'blue', false);
-    boxes += gpCouple(9, 10, matMid, 'green', true);
-    d += bus(patC, patMid) + bus(matC, matMid);
-    d = txt(patMid, yGP - 13, 'סבא וסבתא · צד אבא', 10, '#185FA5')
-      + txt(matMid, yGP - 13, 'סבא וסבתא · צד אמא (גרושים)', 10, '#3B6D11') + d;
+    const centersFor = pids => pids.map(id => idCx[id]).filter(v => v !== undefined);
+    const patC = centersFor(all.filter(x => sameSet(x.parentIds || [], [7, 8])).map(x => x.id));
+    const matC = centersFor(all.filter(x => sameSet(x.parentIds || [], [9, 10])).map(x => x.id));
+    if (patC.length && byId.has(7) && byId.has(8)) {
+        const patMid = (Math.min(...patC) + Math.max(...patC)) / 2;
+        boxes += gpCouple(7, 8, patMid, !!(byId.get(7) || {}).divorced);
+        d += bus(patC, patMid) + txt(patMid, yGP - 13, 'סבא וסבתא · צד אבא', 10, '#185FA5');
+    }
+    if (matC.length && byId.has(9) && byId.has(10)) {
+        const matMid = (Math.min(...matC) + Math.max(...matC)) / 2;
+        const div = !!(byId.get(9) || {}).divorced;
+        boxes += gpCouple(9, 10, matMid, div);
+        d += bus(matC, matMid) + txt(matMid, yGP - 13, 'סבא וסבתא · צד אמא' + (div ? ' (גרושים)' : ''), 10, '#3B6D11');
+    }
+
+    // ---- הורים של דמות ממוקמת שלא שובצו (למשל אריאלה מעל טל) ----
+    all.forEach(par => {
+        if (used.has(par.id) || (par.type || 'birthday') === 'anniversary') return;
+        const child = all.find(x => (x.type || 'birthday') !== 'anniversary' && (x.parentIds || []).includes(par.id) && idCx[x.id] !== undefined);
+        if (child) { const cx = idCx[child.id]; above += node(par.id, cx, 116, 124, 36, 11, false); d += line(cx, 152, cx, yG2); }
+    });
+
     d = txt(totalW / 2, 30, 'עץ משפחה — ממלכת הסדר', 18, '#2C2C2A') + d;
     if (idCx[24] !== undefined && idCx[25] !== undefined) d += txt((idCx[24] + idCx[25]) / 2, yK + KH + 13, 'שרה ונועה — תאומות', 9.5, '#854F0B');
 
     // ---- משפחה נוספת + מקרא ----
     let bottom = yK + KH + 28;
-    const extras = (gameState.birthdays || []).filter(b => !used.has(b.id) && (b.type || 'birthday') !== 'anniversary');
+    const extras = all.filter(b => !used.has(b.id) && (b.type || 'birthday') !== 'anniversary');
     let extraStr = '';
     if (extras.length) {
         extraStr += txt(totalW / 2, bottom + 12, '👪 משפחה נוספת', 13, '#2C2C2A');
         const w = 100, gap = 12, cy = bottom + 24;
         const totW = extras.length * w + (extras.length - 1) * gap;
         const sx = totalW / 2 - totW / 2 + w / 2;
-        extras.forEach((b, i) => extraStr += node(b.id, sx + i * (w + gap), cy, w, 36, 12, 'gray'));
+        extras.forEach((b, i) => extraStr += node(b.id, sx + i * (w + gap), cy, w, 36, 12, false));
         bottom = cy + 36 + 8;
     }
 
@@ -383,7 +413,7 @@ function _familyTreeSVG() {
     });
 
     const H = legendY + 28;
-    return `<svg id="family-tree-svg" width="100%" height="100%" viewBox="0 0 ${totalW} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, sans-serif"><title>עץ משפחה</title><desc>גרף קשרים משפחתי אינטראקטיבי המראה סבים, הורים, אחים, בני זוג וילדים.</desc><g class="tree-vp">${d}${boxes}${kids}${toggles}${extraStr}${legend}</g></svg>`;
+    return `<svg id="family-tree-svg" width="100%" height="100%" viewBox="0 0 ${totalW} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, sans-serif"><title>עץ משפחה</title><desc>גרף קשרים משפחתי אינטראקטיבי המראה סבים, הורים, אחים, בני זוג וילדים.</desc><g class="tree-vp">${d}${boxes}${above}${kids}${toggles}${extraStr}${legend}</g></svg>`;
 }
 
 // ---------- אינטראקציות לעץ: גרירה, זום, הדגשה, עריכה, קיפול ----------
@@ -409,8 +439,8 @@ function _initTreeInteractions() {
     };
     const centerPt = () => { const r = wrap.getBoundingClientRect(); return toSvg(r.left + r.width / 2, r.top + r.height / 2); };
 
-    // ----- קיפול ענפים -----
-    const KEYS = ['k_home', 'k_zohar', 'k_uria'];
+    // ----- קיפול ענפים (מפתחות נגזרים מה-DOM) -----
+    const KEYS = [...new Set([...svg.querySelectorAll('[data-collapse]')].map(e => e.getAttribute('data-collapse')))];
     const applyCollapsed = () => KEYS.forEach(key => {
         const hidden = treeCollapsed.has(key);
         svg.querySelectorAll(`[data-collapse="${key}"]`).forEach(el => el.style.display = hidden ? 'none' : '');
@@ -435,6 +465,7 @@ function _initTreeInteractions() {
         const dateStr = (Number.isInteger(p.day) && Number.isInteger(p.month)) ? `${p.day} ב${HEB_MONTHS[p.month - 1]}${p.year ? ' ' + p.year : ''}` : 'ללא תאריך';
         const age = nextAge(p.year, p.day, p.month);
         const ageStr = (age !== null) ? ageLabel(type, age) : '';
+        const relTxt = (type === 'anniversary') ? (p.relation || '') : deriveRelation(p);
         const editBtns = editMode ? `<div class="flex gap-1.5 mt-2">
                 <button id="tree-pop-edit" class="flex-1 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold">✏️ עריכה</button>
                 <button id="tree-pop-del" class="flex-1 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 text-xs font-bold">🗑️ מחיקה</button>
@@ -444,7 +475,7 @@ function _initTreeInteractions() {
                 <span class="font-extrabold text-sm text-slate-800">${escapeHtml((p.emoji ? p.emoji + ' ' : '') + p.name)}</span>
                 <button id="tree-pop-close" class="text-slate-300 hover:text-slate-500 text-base leading-none">✕</button>
             </div>
-            ${p.relation ? `<div class="text-[11px] text-slate-400 font-bold mb-1">👪 ${escapeHtml(p.relation)}</div>` : ''}
+            ${relTxt ? `<div class="text-[11px] text-slate-400 font-bold mb-1">👪 ${escapeHtml(relTxt)}</div>` : ''}
             <div class="text-[11px] text-slate-500 font-bold">🗓️ ${dateStr}</div>
             ${ageStr ? `<div class="mt-1">${ageStr}</div>` : ''}
             ${editBtns}`;
