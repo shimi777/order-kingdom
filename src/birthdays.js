@@ -66,7 +66,22 @@ function _kin(p, all) {
 // תווית קשר לתצוגה (נגזרת או עקיפה ידנית)
 function deriveRelation(p, all) { return _kin(p, all).label; }
 
-// קבוצת הקשורים ישירות (בן/בת זוג + הורים + ילדים) — להדגשה בעץ
+// מזהה האדם שאליו "מחובר" קשר מותאם (חברה של רן וכו').
+// מעדיף relatedId מבני; נופל לפירוק התווית "סוג של שם" עבור רשומות ישנות.
+function _satTargetId(p, all) {
+    all = all || gameState.birthdays || [];
+    if (p.relatedId != null && all.some(x => x.id === p.relatedId)) return p.relatedId;
+    const rel = (p.relation || '').trim();
+    const i = rel.indexOf(' של ');
+    if (i >= 0) {
+        const nm = rel.slice(i + 4).trim();
+        const t = all.find(x => x.name === nm && x.id !== p.id);
+        if (t) return t.id;
+    }
+    return null;
+}
+
+// קבוצת הקשורים ישירות (בן/בת זוג + הורים + ילדים + קשר מותאם) — להדגשה בעץ
 function _treeRelated(id) {
     const all = gameState.birthdays || [];
     const p = all.find(x => x.id === id);
@@ -75,6 +90,8 @@ function _treeRelated(id) {
     if (p.spouseId) set.add(p.spouseId);
     (p.parentIds || []).forEach(x => set.add(x));
     all.forEach(x => { if ((x.parentIds || []).includes(id)) set.add(x.id); });
+    const tgt = _satTargetId(p, all); if (tgt) set.add(tgt);
+    all.forEach(x => { if (_satTargetId(x, all) === id) set.add(x.id); });
     return set;
 }
 
@@ -293,9 +310,10 @@ function _familyTreeSVG() {
     const byId = new Map((gameState.birthdays || []).map(b => [b.id, b]));
     const used = new Set();
     const idCx = {};
+    const idBox = {};   // גאומטריה מלאה לכל תיבה — לבדיקת התנגשות בפריסת לוויינים
 
     const node = (id, cx, top, w, h, fs, focal) => {
-        used.add(id); idCx[id] = cx;
+        used.add(id); idCx[id] = cx; idBox[id] = { x: cx - w / 2, y: top, w, h };
         const p = byId.get(id) || { name: '?', year: null, emoji: '❓', id };
         const col = C[_kin(p).color] || C.gray;
         const x = cx - w / 2, sw = focal ? 2.6 : 1.4;
@@ -327,15 +345,28 @@ function _familyTreeSVG() {
 
     // סדר דור-2 משמאל לימין (פריסה בלבד) — בן/בת הזוג והילדים נגזרים מהנתונים
     const ORDER = [11, 16, 14, 13, 4, 18, 17, 20, 19];
+
+    // לוויין = אדם ללא מיקום מבני (לא בסדר, ללא הורים/ילדים/בן-זוג) שמחובר בקשר מותאם
+    // לאדם אחר — נציב אותו "ליד" אותו אדם בעץ. relTypeOf שולף את הסוג ("חברה של רן" → "חברה").
+    const relTypeOf = rel => { const i = (rel || '').indexOf(' של '); return (i >= 0 ? rel.slice(0, i) : (rel || '')).trim(); };
+    const isSatellite = x => !ORDER.includes(x.id) && (!x.parentIds || !x.parentIds.length) && x.spouseId == null
+        && (x.type || 'birthday') !== 'anniversary' && !all.some(c => (c.parentIds || []).includes(x.id))
+        && _satTargetId(x, all) != null;
+
     const UNITS = ORDER.filter(id => byId.has(id)).map(pid => {
         const p = byId.get(pid);
         const spId = (p.spouseId && byId.has(p.spouseId)) ? p.spouseId : null;
-        return { primary: pid, spouse: spId, kids: childrenOf(pid, spId), ckey: 'k_' + pid };
+        let satId = null, satRel = '';
+        if (!spId) {
+            const s = all.find(x => isSatellite(x) && _satTargetId(x, all) === pid);
+            if (s) { satId = s.id; satRel = relTypeOf(s.relation); }
+        }
+        return { primary: pid, spouse: spId, satId, satRel, kids: childrenOf(pid, spId), ckey: 'k_' + pid };
     });
 
     let cursor = 60;
     UNITS.forEach(u => {
-        u.slot = Math.max(u.spouse ? coupleW : BW, kidsW(u.kids.length));
+        u.slot = Math.max((u.spouse || u.satId) ? coupleW : BW, kidsW(u.kids.length));
         u.cx = cursor + u.slot / 2;
         cursor += u.slot + UG;
     });
@@ -348,6 +379,12 @@ function _familyTreeSVG() {
             const lx = u.cx - (BW + CG) / 2, rx = u.cx + (BW + CG) / 2, focal = (u.primary === 4);
             boxes += node(u.primary, lx, yG2, BW, BH, 12, focal) + node(u.spouse, rx, yG2, BW, BH, 12, focal);
             d += line(lx + BW / 2, yG2 + BH / 2, rx - BW / 2, yG2 + BH / 2) + heart(u.cx, yG2 + BH / 2 + 4);
+        } else if (u.satId) {
+            // לוויין: ניצב ליד האדם המקושר, עם קו דק ותווית סוג-הקשר (במקום לב)
+            const lx = u.cx - (BW + CG) / 2, rx = u.cx + (BW + CG) / 2;
+            boxes += node(u.primary, lx, yG2, BW, BH, 12, false) + node(u.satId, rx, yG2, BW, BH, 12, false);
+            d += `<line x1="${lx + BW / 2}" y1="${yG2 + BH / 2}" x2="${rx - BW / 2}" y2="${yG2 + BH / 2}" stroke="#B4B2A9" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+            if (u.satRel) d += txt(u.cx, yG2 - 5, u.satRel, 9.5, '#5F5E5A');
         } else {
             boxes += node(u.primary, u.cx, yG2, BW, BH, 12, false);
         }
@@ -356,7 +393,7 @@ function _familyTreeSVG() {
             let g = `<g data-collapse="${u.ckey}">` + line(u.cx, yG2 + BH, u.cx, yK - 12) + line(start, yK - 12, start + (n - 1) * KP, yK - 12);
             u.kids.forEach((kid, i) => { const kx = start + i * KP; g += line(kx, yK - 12, kx, yK) + node(kid, kx, yK, KW, KH, 12, false); });
             kids += g + `</g>`;
-            toggles += toggle(u.ckey, (u.spouse ? u.cx + (BW + CG) / 2 : u.cx + BW / 2) + 14, yG2 + BH / 2);
+            toggles += toggle(u.ckey, ((u.spouse || u.satId) ? u.cx + (BW + CG) / 2 : u.cx + BW / 2) + 14, yG2 + BH / 2);
         }
     });
 
@@ -398,6 +435,39 @@ function _familyTreeSVG() {
         if (child) { const cx = idCx[child.id]; above += node(par.id, cx, 116, 124, 36, 11, false); d += line(cx, 152, cx, yG2); }
     });
 
+    // ---- לוויינים כלליים: כל קשר מותאם שטרם הוצב לצד הדור-האמצעי —
+    // מוצב ליד האדם המקושר בכל דור (סבים/ילדים/וכו') לפי המקום הפנוי הראשון. ----
+    const SW = 104, SH = 38, SGAP = 16;
+    const hit = (a, b, m = 6) => !(a.x + a.w + m <= b.x || b.x + b.w + m <= a.x || a.y + a.h + m <= b.y || b.y + b.h + m <= a.y);
+    const satBounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+    all.forEach(x => {
+        if (used.has(x.id) || !isSatellite(x)) return;
+        const tb = idBox[_satTargetId(x, all)];
+        if (!tb) return;                       // היעד אינו משובץ → יישאר ב"משפחה נוספת"
+        const placed = Object.values(idBox);
+        const cy = tb.y + (tb.h - SH) / 2, ccx = tb.x + (tb.w - SW) / 2;
+        const cands = [
+            { x: tb.x + tb.w + SGAP, y: cy,                 side: 'r' },
+            { x: tb.x - SGAP - SW,   y: cy,                 side: 'l' },
+            { x: ccx,                y: tb.y + tb.h + SGAP, side: 'b' },
+            { x: ccx,                y: tb.y - SGAP - SH,   side: 't' },
+        ];
+        const spot = cands.find(c => placed.every(b => !hit({ x: c.x, y: c.y, w: SW, h: SH }, b)));
+        if (!spot) return;                     // אין מקום פנוי → יישאר ב"משפחה נוספת"
+        const scx = spot.x + SW / 2, scy = spot.y + SH / 2, tcx = tb.x + tb.w / 2, tcy = tb.y + tb.h / 2;
+        boxes += node(x.id, scx, spot.y, SW, SH, 11, false);
+        let x1, y1, x2, y2;
+        if (spot.side === 'r')      { x1 = tb.x + tb.w; y1 = tcy; x2 = spot.x;      y2 = scy; }
+        else if (spot.side === 'l') { x1 = tb.x;        y1 = tcy; x2 = spot.x + SW; y2 = scy; }
+        else if (spot.side === 'b') { x1 = tcx;         y1 = tb.y + tb.h; x2 = scx; y2 = spot.y; }
+        else                        { x1 = tcx;         y1 = tb.y;        x2 = scx; y2 = spot.y + SH; }
+        d += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#B4B2A9" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+        const rt = relTypeOf(x.relation);
+        if (rt) d += txt((x1 + x2) / 2, (y1 + y2) / 2 - 4, rt, 9, '#5F5E5A');
+        satBounds.minX = Math.min(satBounds.minX, spot.x);      satBounds.minY = Math.min(satBounds.minY, spot.y);
+        satBounds.maxX = Math.max(satBounds.maxX, spot.x + SW); satBounds.maxY = Math.max(satBounds.maxY, spot.y + SH);
+    });
+
     d = txt(totalW / 2, 30, 'עץ משפחה — ממלכת הסדר', 18, '#2C2C2A') + d;
     if (idCx[24] !== undefined && idCx[25] !== undefined) d += txt((idCx[24] + idCx[25]) / 2, yK + KH + 13, 'שרה ונועה — תאומות', 9.5, '#854F0B');
 
@@ -424,7 +494,10 @@ function _familyTreeSVG() {
     });
 
     const H = legendY + 28;
-    return `<svg id="family-tree-svg" width="100%" height="100%" viewBox="0 0 ${totalW} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, sans-serif"><title>עץ משפחה</title><desc>גרף קשרים משפחתי אינטראקטיבי המראה סבים, הורים, אחים, בני זוג וילדים.</desc><g class="tree-vp">${d}${boxes}${above}${kids}${toggles}${extraStr}${legend}</g></svg>`;
+    // הרחבת ה-viewBox כך שיכלול לוויינים שיצאו מגבולות הקנבס הבסיסי
+    const vbX = Math.min(0, satBounds.minX), vbY = Math.min(0, satBounds.minY);
+    const vbW = Math.max(totalW, satBounds.maxX) - vbX, vbH = Math.max(H, satBounds.maxY) - vbY;
+    return `<svg id="family-tree-svg" width="100%" height="100%" viewBox="${vbX} ${vbY} ${vbW} ${vbH}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" role="img" font-family="ui-sans-serif, system-ui, sans-serif"><title>עץ משפחה</title><desc>גרף קשרים משפחתי אינטראקטיבי המראה סבים, הורים, אחים, בני זוג וילדים.</desc><g class="tree-vp">${d}${boxes}${above}${kids}${toggles}${extraStr}${legend}</g></svg>`;
 }
 
 // ---------- אינטראקציות לעץ: גרירה, זום, הדגשה, עריכה, קיפול ----------
@@ -566,7 +639,7 @@ export function setBirthdayType(type) {
 
 // ---------- בורר קשר משפחתי: סוג (מרשימה / חדש) + "של מי" ----------
 // בונה תווית קשר כמו "אח של נווה דוד" לתוך השדה הנסתר birthday-edit-relation.
-function _renderRelationPicker(existingRelation, currentId) {
+function _renderRelationPicker(existingRelation, currentId, relatedId) {
     const typeSel   = document.getElementById('birthday-edit-rel-type');
     const personSel = document.getElementById('birthday-edit-rel-person');
     const customInp = document.getElementById('birthday-edit-rel-custom');
@@ -590,6 +663,8 @@ function _renderRelationPicker(existingRelation, currentId) {
             selType = '__custom__'; customVal = rel;   // לא ניתן לפירוק → טקסט חופשי
         }
     }
+    // קישור מבני מפורש גובר על פירוק לפי שם (עמיד לשינוי שם של האדם המקושר)
+    if (relatedId != null && all.some(x => x.id === relatedId && x.id !== currentId)) selPersonId = String(relatedId);
 
     typeSel.innerHTML = '<option value="">— ללא (יחושב אוטומטית) —</option>'
         + types.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')
@@ -653,7 +728,7 @@ export function openBirthdayEditor(id) {
     };
     document.getElementById("birthday-edit-id").value   = b ? b.id : "";
     document.getElementById("birthday-edit-name").value = b ? b.name : "";
-    _renderRelationPicker((b && b.relation) ? b.relation : "", b ? b.id : null);
+    _renderRelationPicker((b && b.relation) ? b.relation : "", b ? b.id : null, (b && b.relatedId != null) ? b.relatedId : null);
     document.getElementById("birthday-edit-day").value  = (b && Number.isInteger(b.day)) ? b.day : "";
     document.getElementById("birthday-edit-year").value = (b && Number.isInteger(b.year)) ? b.year : "";
 
@@ -746,6 +821,10 @@ export function saveBirthdayEditor() {
     const cleanYear = Number.isInteger(year) ? year : null;
     if (!gameState.birthdays) gameState.birthdays = [];
 
+    // קישור מבני לאדם שנבחר ב"של מי" — מציב את הרשומה לידו בעץ (נשמר גם אם משנים שם)
+    const relPersonSel = document.getElementById("birthday-edit-rel-person");
+    const relatedId = (relation && relPersonSel && relPersonSel.value) ? parseInt(relPersonSel.value, 10) : null;
+
     if (idRaw) {
         const b = gameState.birthdays.find(x => x.id === parseInt(idRaw, 10));
         if (b) {
@@ -753,9 +832,12 @@ export function saveBirthdayEditor() {
             b.group = groupFromRelation(relation, type);
             b.day = day; b.month = month; b.year = cleanYear;
             b.emoji = st.emoji || "🎂"; b.photo = st.photo || null;
+            if (relatedId != null) b.relatedId = relatedId; else delete b.relatedId;
         }
     } else {
-        gameState.birthdays.push({ id: Date.now(), name, type, relation, group: groupFromRelation(relation, type), day, month, year: cleanYear, emoji: st.emoji || "🎂", photo: st.photo || null });
+        const rec = { id: Date.now(), name, type, relation, group: groupFromRelation(relation, type), day, month, year: cleanYear, emoji: st.emoji || "🎂", photo: st.photo || null };
+        if (relatedId != null) rec.relatedId = relatedId;
+        gameState.birthdays.push(rec);
     }
     closeBirthdayEditor();
     const label = typeInfo(type).label;
