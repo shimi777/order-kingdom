@@ -106,6 +106,7 @@
     <div class="max-w-7xl mx-auto px-4 pt-2 flex justify-center gap-2">
         <button id="tab-chores" onclick="switchView('chores')" class="py-2 px-5 bg-amber-500 text-white border border-amber-500 rounded-2xl text-sm font-bold shadow-sm transition-all">🏰 ממלכת הסדר</button>
         <button id="tab-schedule" onclick="switchView('schedule')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">📅 לו״ז</button>
+        <button id="tab-pantry" onclick="switchView('pantry')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">🛒 קניות ומלאי</button>
         <button id="tab-deeds" onclick="switchView('deeds')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">💝 קיר מעשים טובים</button>
         <button id="tab-birthdays" onclick="switchView('birthdays')" class="py-2 px-5 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-2xl text-sm font-bold shadow-sm transition-all">🗓️ מועדים</button>
     </div>
@@ -372,6 +373,20 @@
             </div>
         </div>
 
+    </div><!-- /view-schedule -->
+
+    <div id="view-pantry" class="hidden max-w-7xl mx-auto px-4 mt-6 flex flex-col gap-6">
+
+        <!-- כותרת -->
+        <div class="watercolor-card p-6 border-amber-200/50 bg-gradient-to-br from-white/85 to-amber-50/40">
+            <div class="flex items-center gap-2 mb-1">
+                <span class="text-3xl">🛒</span>
+                <h2 class="text-2xl font-extrabold text-amber-800">קניות ומלאי</h2>
+            </div>
+            <p class="text-xs text-slate-400">רשימת הקניות וניהול המלאי הביתי — מזון וחומרי ניקוי. כשמשהו עומד להיגמר, מוסיפים אותו לרשימה בלחיצה. ✨</p>
+        </div>
+
+        <!-- רשימת קניות -->
         <div class="watercolor-card p-6">
             <h3 class="text-xl font-bold text-slate-800 flex items-center gap-2 mb-4"><span class="text-2xl">🛒</span> רשימת קניות</h3>
             <div class="flex gap-2 mb-4">
@@ -382,7 +397,10 @@
             <button onclick="clearBoughtItems()" class="w-full mt-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold rounded-xl text-xs">🧹 נקה שנקנו</button>
         </div>
 
-    </div><!-- /view-schedule -->
+        <!-- ניהול מלאי (מזון + חומרי ניקוי) -->
+        <div id="inventory-sections" class="flex flex-col gap-6"></div>
+
+    </div><!-- /view-pantry -->
 
     <div id="view-deeds" class="hidden max-w-7xl mx-auto px-4 mt-6 flex flex-col gap-6">
 

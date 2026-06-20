@@ -89,7 +89,6 @@ export function renderSchedule() {
         rows += `</tr>`;
     }
     tbody.innerHTML = rows;
-    renderShoppingList();
 }
 
 // בונה את ה-<option>-ים לרשימת ארוחות הערב (כולל ערך נבחר שאינו ברשימה)
