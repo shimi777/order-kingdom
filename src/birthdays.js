@@ -253,7 +253,7 @@ function _cardHTML(b) {
     const sty   = typeStyle(type);
 
     const avatar = b.photo
-        ? `<img src="${b.photo}" class="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm shrink-0" alt="${escapeAttr(b.name)}">`
+        ? `<img src="${escapeAttr(b.photo)}" class="w-16 h-20 rounded-xl object-cover border-2 border-white shadow-sm shrink-0" alt="${escapeAttr(b.name)}">`
         : `<div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-amber-100 to-pink-100 border-2 border-white shadow-sm shrink-0">${b.emoji || info.emoji}</div>`;
 
     let dateLine, countLine;
