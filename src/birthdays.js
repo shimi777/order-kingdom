@@ -43,8 +43,14 @@ function _kin(p, all) {
     const parentsOf = id => (byId.get(id) || {}).parentIds || [];
     const override = (p.relation && p.relation.trim()) ? p.relation.trim() : null;
 
+    // לוויין: חיית מחמד/מקורב — לא קרוב-דם מבני. נצבע בסגול ונבדיל מילד גם כשהוצב
+    // כצאצא לזוג (parentIds). מזוהה ע"י relatedId, או ע"י תווית-קשר ידנית על מי שמוצב
+    // כצאצא (ילד "אמיתי" משאיר relation ריק ונגזר אוטומטית).
+    const isSat = (p.relatedId != null && byId.get(p.relatedId)) || (par.length && override);
+
     let kind = 'other', color = 'gray', label = g('בן משפחה', 'בת משפחה');
-    if (p.id === 4) { kind = 'dad'; color = 'blue'; label = 'אבא'; }
+    if (isSat) { kind = 'sat'; color = 'purple'; }
+    else if (p.id === 4) { kind = 'dad'; color = 'blue'; label = 'אבא'; }
     else if (p.id === 5) { kind = 'mom'; color = 'green'; label = 'אמא'; }
     else if (par.length && par.every(x => FAM_ROOT.includes(x))) { kind = 'child'; color = 'amber'; label = g('בן', 'בת'); }
     else if (byId.get(4) && parentsOf(4).includes(p.id)) { kind = 'patGP'; color = 'blue'; label = g('סבא', 'סבתא'); }
@@ -305,6 +311,7 @@ function _familyTreeSVG() {
         green: { f:'#EAF3DE', s:'#3B6D11', t:'#173404' },
         gray:  { f:'#F1EFE8', s:'#5F5E5A', t:'#2C2C2A' },
         amber: { f:'#FAEEDA', s:'#854F0B', t:'#412402' },
+        purple:{ f:'#F3EAFB', s:'#7C3AED', t:'#3B1A66' },
     };
     const L = '#B4B2A9';
     const byId = new Map((gameState.birthdays || []).map(b => [b.id, b]));
@@ -485,15 +492,17 @@ function _familyTreeSVG() {
     }
 
     const legendY = bottom + 12;
-    const legendItems = [['blue', 'צד אבא (שימי)'], ['green', 'צד אמא (נעמי)'], ['gray', 'בני/בנות זוג'], ['amber', 'ילדים ונכדים']];
-    let legend = '', lx = 60;
+    const legendItems = [['blue', 'צד אבא (שימי)'], ['green', 'צד אמא (נעמי)'], ['gray', 'בני/בנות זוג'], ['amber', 'ילדים ונכדים'], ['purple', 'חיות מחמד ומקורבים']];
+    const LSTRIDE = 180;
+    let legend = '', lx = 60, ly = legendY;
     legendItems.forEach(([ck, lab]) => {
+        if (lx > 60 && lx + LSTRIDE > totalW) { lx = 60; ly += 22; }   // גלישה לשורה הבאה כשנגמר הרוחב
         const c = C[ck];
-        legend += `<rect x="${lx}" y="${legendY}" width="14" height="14" rx="3" fill="${c.f}" stroke="${c.s}" stroke-width="1.4"/>` + txt(lx + 20, legendY + 11, lab, 11, '#444441', 'start');
-        lx += 170;
+        legend += `<rect x="${lx}" y="${ly}" width="14" height="14" rx="3" fill="${c.f}" stroke="${c.s}" stroke-width="1.4"/>` + txt(lx + 20, ly + 11, lab, 11, '#444441', 'start');
+        lx += LSTRIDE;
     });
 
-    const H = legendY + 28;
+    const H = ly + 28;
     // הרחבת ה-viewBox כך שיכלול לוויינים שיצאו מגבולות הקנבס הבסיסי
     const vbX = Math.min(0, satBounds.minX), vbY = Math.min(0, satBounds.minY);
     const vbW = Math.max(totalW, satBounds.maxX) - vbX, vbH = Math.max(H, satBounds.maxY) - vbY;
