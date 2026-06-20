@@ -639,10 +639,11 @@ export function setBirthdayType(type) {
 
 // ---------- בורר קשר משפחתי: סוג (מרשימה / חדש) + "של מי" ----------
 // בונה תווית קשר כמו "אח של נווה דוד" לתוך השדה הנסתר birthday-edit-relation.
-function _renderRelationPicker(existingRelation, currentId, relatedId) {
+function _renderRelationPicker(existingRelation, currentId, relatedId, coupleLinked) {
     const typeSel   = document.getElementById('birthday-edit-rel-type');
     const personSel = document.getElementById('birthday-edit-rel-person');
     const customInp = document.getElementById('birthday-edit-rel-custom');
+    const coupleChk = document.getElementById('birthday-edit-rel-couple-chk');
     if (!typeSel || !personSel) return;
 
     const types = getRelationTypes();
@@ -655,7 +656,9 @@ function _renderRelationPicker(existingRelation, currentId, relatedId) {
         const idx = rel.indexOf(' של ');
         const typePart   = (idx >= 0 ? rel.slice(0, idx) : rel).trim();
         const personPart = (idx >= 0 ? rel.slice(idx + 4) : '').trim();
-        const person = personPart ? all.find(x => x.name === personPart && x.id !== currentId) : null;
+        // relatedId מבני גובר על פירוק לפי שם (עמיד לתווית-זוג "א וב" שלא תואמת שם בודד)
+        const relPerson  = (relatedId != null) ? all.find(x => x.id === relatedId && x.id !== currentId) : null;
+        const person = relPerson || (personPart ? all.find(x => x.name === personPart && x.id !== currentId) : null);
         if (types.includes(typePart) && (!personPart || person)) {
             selType = typePart;
             if (person) selPersonId = String(person.id);
@@ -665,6 +668,7 @@ function _renderRelationPicker(existingRelation, currentId, relatedId) {
     }
     // קישור מבני מפורש גובר על פירוק לפי שם (עמיד לשינוי שם של האדם המקושר)
     if (relatedId != null && all.some(x => x.id === relatedId && x.id !== currentId)) selPersonId = String(relatedId);
+    if (coupleChk) coupleChk.checked = !!coupleLinked;
 
     typeSel.innerHTML = '<option value="">— ללא (יחושב אוטומטית) —</option>'
         + types.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')
@@ -695,24 +699,38 @@ export function onRelTypeChange() {
 }
 
 export function composeRelation() {
-    const typeSel   = document.getElementById('birthday-edit-rel-type');
-    const personSel = document.getElementById('birthday-edit-rel-person');
-    const customInp = document.getElementById('birthday-edit-rel-custom');
-    const hidden    = document.getElementById('birthday-edit-relation');
-    const prev      = document.getElementById('birthday-edit-rel-preview');
+    const typeSel    = document.getElementById('birthday-edit-rel-type');
+    const personSel  = document.getElementById('birthday-edit-rel-person');
+    const customInp  = document.getElementById('birthday-edit-rel-custom');
+    const hidden     = document.getElementById('birthday-edit-relation');
+    const prev       = document.getElementById('birthday-edit-rel-preview');
+    const coupleWrap = document.getElementById('birthday-edit-rel-couple');
+    const coupleChk  = document.getElementById('birthday-edit-rel-couple-chk');
+    const coupleLbl  = document.getElementById('birthday-edit-rel-couple-label');
     if (!typeSel || !hidden) return;
 
     let type = typeSel.value;
     if (type === '__custom__') type = customInp ? customInp.value.trim() : '';
 
+    // האדם שנבחר ב"של מי?" ובן/בת זוגו (אם יש) — לשיוך לזוג
+    const all    = gameState.birthdays || [];
+    const pid    = personSel ? personSel.value : '';
+    const person = pid ? all.find(x => String(x.id) === pid) : null;
+    const spouse = (person && person.spouseId) ? all.find(x => x.id === person.spouseId) : null;
+
+    // תיבת "שני בני הזוג" מופיעה רק כשהאדם שנבחר הוא בן/בת זוג של מישהו
+    if (coupleWrap) {
+        const canCouple = !!(type && person && spouse);
+        coupleWrap.classList.toggle('hidden', !canCouple);
+        if (!canCouple && coupleChk) coupleChk.checked = false;
+        if (canCouple && coupleLbl) coupleLbl.textContent = `שייך גם ל${spouse.name} (שני בני הזוג)`;
+    }
+    const couple = !!(coupleChk && coupleChk.checked && person && spouse);
+
     let rel = '';
     if (type) {
         rel = type;
-        const pid = personSel ? personSel.value : '';
-        if (pid) {
-            const p = (gameState.birthdays || []).find(x => String(x.id) === pid);
-            if (p) rel = `${type} של ${p.name}`;
-        }
+        if (person) rel = couple ? `${type} של ${person.name} ו${spouse.name}` : `${type} של ${person.name}`;
     }
     hidden.value = rel;
     if (prev) prev.textContent = rel ? `👪 ${rel}` : 'יחושב אוטומטית מהמיקום בעץ';
@@ -728,7 +746,8 @@ export function openBirthdayEditor(id) {
     };
     document.getElementById("birthday-edit-id").value   = b ? b.id : "";
     document.getElementById("birthday-edit-name").value = b ? b.name : "";
-    _renderRelationPicker((b && b.relation) ? b.relation : "", b ? b.id : null, (b && b.relatedId != null) ? b.relatedId : null);
+    const coupleLinked = !!(b && b.relatedId != null && Array.isArray(b.parentIds) && b.parentIds.length === 2);
+    _renderRelationPicker((b && b.relation) ? b.relation : "", b ? b.id : null, (b && b.relatedId != null) ? b.relatedId : null, coupleLinked);
     document.getElementById("birthday-edit-day").value  = (b && Number.isInteger(b.day)) ? b.day : "";
     document.getElementById("birthday-edit-year").value = (b && Number.isInteger(b.year)) ? b.year : "";
 
@@ -825,18 +844,33 @@ export function saveBirthdayEditor() {
     const relPersonSel = document.getElementById("birthday-edit-rel-person");
     const relatedId = (relation && relPersonSel && relPersonSel.value) ? parseInt(relPersonSel.value, 10) : null;
 
+    // "שני בני הזוג": אם סומן והאדם שנבחר בן/בת זוג — נשייך כצאצא לזוג (parentIds),
+    // כך שהרשומה תתמרכז מתחת לזוג בעץ בדיוק כמו ילד (relatedId נשמר כעוגן לעריכה).
+    const coupleChk = document.getElementById("birthday-edit-rel-couple-chk");
+    let coupleParents = null;
+    if (relatedId != null && coupleChk && coupleChk.checked) {
+        const person = gameState.birthdays.find(x => x.id === relatedId);
+        const spId = person && person.spouseId;
+        if (spId != null && gameState.birthdays.some(x => x.id === spId)) coupleParents = [relatedId, spId];
+    }
+
     if (idRaw) {
         const b = gameState.birthdays.find(x => x.id === parseInt(idRaw, 10));
         if (b) {
+            const wasPet = (b.relatedId != null);   // האם הרשומה כבר הייתה "לוויין" (לא צאצא מבני)
             b.name = name; b.type = type; b.relation = relation;
             b.group = groupFromRelation(relation, type);
             b.day = day; b.month = month; b.year = cleanYear;
             b.emoji = st.emoji || "🎂"; b.photo = st.photo || null;
             if (relatedId != null) b.relatedId = relatedId; else delete b.relatedId;
+            // נוגעים ב-parentIds רק עבור לוויין (כדי לא לפגוע בהורי ילד מבני)
+            if (coupleParents) b.parentIds = coupleParents;
+            else if (wasPet) delete b.parentIds;
         }
     } else {
         const rec = { id: Date.now(), name, type, relation, group: groupFromRelation(relation, type), day, month, year: cleanYear, emoji: st.emoji || "🎂", photo: st.photo || null };
         if (relatedId != null) rec.relatedId = relatedId;
+        if (coupleParents) rec.parentIds = coupleParents;
         gameState.birthdays.push(rec);
     }
     closeBirthdayEditor();
