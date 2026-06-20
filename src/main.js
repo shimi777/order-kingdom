@@ -25,6 +25,9 @@ Object.assign(window, {
     // tasks.js
     toggleGlobalEdit: tasks.toggleGlobalEdit,
     changeEditPassword: tasks.changeEditPassword,
+    openSettingsEditor: tasks.openSettingsEditor,
+    closeSettingsEditor: tasks.closeSettingsEditor,
+    saveSettingsEditor: tasks.saveSettingsEditor,
     openCharacterEditor: tasks.openCharacterEditor,
     closeCharacterEditor: tasks.closeCharacterEditor,
     saveCharacterEditor: tasks.saveCharacterEditor,

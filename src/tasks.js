@@ -143,6 +143,23 @@ export function requestEditAccess() {
     return false;
 }
 
+// ===== הגדרות הורים =====
+export function openSettingsEditor() {
+    const mode = (gameState.settings && gameState.settings.freshnessMode) || 'grace';
+    document.getElementById("settings-freshness-mode").value = mode;
+    document.getElementById("settings-editor-modal").classList.remove("hidden");
+}
+
+export function closeSettingsEditor() { document.getElementById("settings-editor-modal").classList.add("hidden"); }
+
+export function saveSettingsEditor() {
+    if (!gameState.settings) gameState.settings = {};
+    gameState.settings.freshnessMode = document.getElementById("settings-freshness-mode").value;
+    closeSettingsEditor();
+    showToast("⚙️ ההגדרות נשמרו", "אחוזי הניקיון יחושבו לפי ההעדפה החדשה.");
+    saveGameState("עדכון הגדרות הורים");
+}
+
 export function changeEditPassword() {
     const stored = localStorage.getItem(EDIT_PW_KEY);
     const cur = prompt("הזינו את הסיסמה הנוכחית:");
