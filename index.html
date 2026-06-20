@@ -487,7 +487,13 @@
                 </div>
                 <div>
                     <label class="block text-[11px] font-bold text-slate-500 mb-1">קשר משפחתי <span class="text-slate-300">(לא חובה)</span></label>
-                    <input id="birthday-edit-relation" type="text" placeholder="לדוגמה: דוד (אח של שימי)" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                    <div class="grid grid-cols-2 gap-2">
+                        <select id="birthday-edit-rel-type" onchange="onRelTypeChange()" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-amber-300"></select>
+                        <select id="birthday-edit-rel-person" onchange="composeRelation()" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-amber-300"></select>
+                    </div>
+                    <input id="birthday-edit-rel-custom" type="text" placeholder="הקלידו סוג קשר חדש…" oninput="composeRelation()" class="hidden mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                    <input type="hidden" id="birthday-edit-relation">
+                    <div id="birthday-edit-rel-preview" class="text-[11px] text-slate-400 font-bold mt-1"></div>
                 </div>
                 <div class="grid grid-cols-3 gap-3">
                     <div>
