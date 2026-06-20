@@ -10,8 +10,9 @@ import { renderSchedule, renderMonth, scheduleSub, renderShoppingList } from './
 import { updateFridayBadge } from './prizes.js';
 import { renderBirthdays } from './birthdays.js';
 import { renderInventory } from './inventory.js';
+import { renderToday } from './today.js';
 
-export function renderAll() { renderHeroDashboards(); renderRooms(); renderTasks(); renderDeedsWall(); renderBirthdays(); updateProgressDOM(); updateFridayBadge(); }
+export function renderAll() { renderToday(); renderHeroDashboards(); renderRooms(); renderTasks(); renderDeedsWall(); renderBirthdays(); updateProgressDOM(); updateFridayBadge(); }
 
 export function renderHeroDashboards() {
     const container = document.getElementById("avatars-container");
@@ -323,7 +324,9 @@ export function switchView(name) {
         if (v) v.classList.toggle("hidden", key !== name);
         if (t) t.className = (key === name) ? activeCls : idleCls;
     });
-    if (name === 'schedule') {
+    if (name === 'chores') {
+        renderToday();   // רענון המבט היומי (ארוחות/מלאי עשויים להשתנות בלשוניות אחרות)
+    } else if (name === 'schedule') {
         renderSchedule();
         if (scheduleSub === 'monthly') renderMonth();
     } else if (name === 'pantry') {
