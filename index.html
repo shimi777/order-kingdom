@@ -510,6 +510,10 @@
                         <select id="birthday-edit-rel-person" onchange="composeRelation()" class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-amber-300"></select>
                     </div>
                     <input id="birthday-edit-rel-custom" type="text" placeholder="הקלידו סוג קשר חדש…" oninput="composeRelation()" class="hidden mt-2 w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-amber-300">
+                    <label id="birthday-edit-rel-couple" class="hidden mt-2 flex items-center gap-2 text-[12px] font-bold text-slate-600 cursor-pointer">
+                        <input id="birthday-edit-rel-couple-chk" type="checkbox" onchange="composeRelation()" class="accent-amber-500 w-4 h-4">
+                        <span id="birthday-edit-rel-couple-label">שייך לשני בני הזוג</span>
+                    </label>
                     <input type="hidden" id="birthday-edit-relation">
                     <div id="birthday-edit-rel-preview" class="text-[11px] text-slate-400 font-bold mt-1"></div>
                 </div>
