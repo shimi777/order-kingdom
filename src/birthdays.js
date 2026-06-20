@@ -6,10 +6,9 @@
 
 import { gameState, saveGameState } from './state.js';
 import { showToast, createSparkles } from './render.js';
-import { editMode } from './tasks.js';
 import { renderMonth } from './schedule.js';
 import { escapeHtml, escapeAttr, downscaleImage } from './util.js';
-import { AVATAR_CHOICES, HEB_MONTHS, EVENT_TYPES } from './constants.js';
+import { AVATAR_CHOICES, HEB_MONTHS, EVENT_TYPES, RELATION_TYPES } from './constants.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -100,6 +99,18 @@ function groupFromRelation(relation, type) {
     return 'other';
 }
 
+// רשימת סוגי הקשר לבחירה: ברירת-מחדל + סוגים שהמשפחה הוסיפה (relationTypesCustom)
+function getRelationTypes() {
+    const custom = Array.isArray(gameState.relationTypesCustom) ? gameState.relationTypesCustom : [];
+    const seen = new Set();
+    const out = [];
+    [...RELATION_TYPES, ...custom].forEach(t => {
+        const v = (t || '').trim();
+        if (v && !seen.has(v)) { seen.add(v); out.push(v); }
+    });
+    return out;
+}
+
 // ---------- עזרי תאריך ----------
 export function hasDate(b) { return Number.isInteger(b.day) && Number.isInteger(b.month); }
 
@@ -164,9 +175,9 @@ export function renderBirthdays() {
     const list = document.getElementById("birthdays-list");
     if (!list) return;
 
-    // כפתור ייבוא CSV — גלוי רק במצב עריכה
+    // כפתור ייבוא CSV — גלוי תמיד במסך המועדים (ניהול ע"י הורים)
     const importBtn = document.getElementById('birthday-import-csv-btn');
-    if (importBtn) importBtn.classList.toggle('hidden', !editMode);
+    if (importBtn) importBtn.classList.remove('hidden');
 
     const bdays = gameState.birthdays || [];
 
@@ -192,7 +203,7 @@ export function renderBirthdays() {
                     <button id="tree-zin"  class="w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-600 text-xl font-bold flex items-center justify-center hover:bg-slate-50">+</button>
                     <button id="tree-zout" class="w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-600 text-xl font-bold flex items-center justify-center hover:bg-slate-50">−</button>
                     <button id="tree-zreset" class="w-9 h-9 rounded-xl bg-white shadow-sm border border-slate-200 text-slate-500 text-base flex items-center justify-center hover:bg-slate-50" title="איפוס תצוגה">⟲</button>
-                    ${editMode ? `<button id="tree-add" class="w-9 h-9 mt-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xl font-bold shadow-sm flex items-center justify-center" title="הוספת דמות">➕</button>` : ''}
+                    <button id="tree-add" class="w-9 h-9 mt-1 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xl font-bold shadow-sm flex items-center justify-center" title="הוספת דמות">➕</button>
                 </div>
                 <div class="absolute top-2 right-2 text-[10px] text-slate-400 bg-white/70 rounded-lg px-2 py-1 pointer-events-none leading-tight">גררו להזזה · גלגלת/צביטה לזום<br>הקישו על דמות לפרטים · ◯ לקיפול ענף</div>
                 <div id="tree-popover" class="hidden absolute z-20 w-44 bg-white rounded-xl shadow-lg border border-slate-200 p-3 text-right"></div>
@@ -228,7 +239,7 @@ function _cardHTML(b) {
         countLine = today ? "🎉 היום!" : dleft === 1 ? "מחר! 🎈" : `בעוד ${dleft} ימים`;
     } else {
         dateLine  = "🗓️ — ללא תאריך";
-        countLine = editMode ? "✏️ הוסיפו תאריך" : "";
+        countLine = "✏️ הוסיפו תאריך";
     }
 
     const ageLine = (age !== null && hasDate(b)) ? ageLabel(type, age) : "";
@@ -241,11 +252,11 @@ function _cardHTML(b) {
         ? `watercolor-card p-5 ${sty.todayBorder} bg-gradient-to-br ${sty.todayBg} ${sty.todayRing} flex flex-col`
         : `watercolor-card p-5 ${sty.border} bg-gradient-to-br ${sty.bg} flex flex-col`;
 
-    const editControls = editMode ? `
+    const editControls = `
         <div class="flex gap-1.5 mt-3 pt-3 border-t border-slate-100">
             <button onclick="openBirthdayEditor(${b.id})" class="flex-1 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 text-[11px] font-bold border border-amber-100">✏️ עריכה</button>
             <button onclick="deleteBirthday(${b.id})" class="flex-1 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 text-[11px] font-bold border border-rose-100">🗑️ מחיקה</button>
-        </div>` : "";
+        </div>`;
 
     return `
         <div class="${cardCls}">
@@ -466,10 +477,10 @@ function _initTreeInteractions() {
         const age = nextAge(p.year, p.day, p.month);
         const ageStr = (age !== null) ? ageLabel(type, age) : '';
         const relTxt = (type === 'anniversary') ? (p.relation || '') : deriveRelation(p);
-        const editBtns = editMode ? `<div class="flex gap-1.5 mt-2">
+        const editBtns = `<div class="flex gap-1.5 mt-2">
                 <button id="tree-pop-edit" class="flex-1 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold">✏️ עריכה</button>
                 <button id="tree-pop-del" class="flex-1 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 text-xs font-bold">🗑️ מחיקה</button>
-            </div>` : '';
+            </div>`;
         pop.innerHTML = `
             <div class="flex items-center justify-between gap-2 mb-1">
                 <span class="font-extrabold text-sm text-slate-800">${escapeHtml((p.emoji ? p.emoji + ' ' : '') + p.name)}</span>
@@ -553,6 +564,85 @@ export function setBirthdayType(type) {
     _renderTypeSelector();
 }
 
+// ---------- בורר קשר משפחתי: סוג (מרשימה / חדש) + "של מי" ----------
+// בונה תווית קשר כמו "אח של נווה דוד" לתוך השדה הנסתר birthday-edit-relation.
+function _renderRelationPicker(existingRelation, currentId) {
+    const typeSel   = document.getElementById('birthday-edit-rel-type');
+    const personSel = document.getElementById('birthday-edit-rel-person');
+    const customInp = document.getElementById('birthday-edit-rel-custom');
+    if (!typeSel || !personSel) return;
+
+    const types = getRelationTypes();
+    const all   = gameState.birthdays || [];
+
+    // פירוק הקשר הקיים חזרה ל"סוג" + "של מי" (best-effort)
+    let selType = '', selPersonId = '', customVal = '';
+    const rel = (existingRelation || '').trim();
+    if (rel) {
+        const idx = rel.indexOf(' של ');
+        const typePart   = (idx >= 0 ? rel.slice(0, idx) : rel).trim();
+        const personPart = (idx >= 0 ? rel.slice(idx + 4) : '').trim();
+        const person = personPart ? all.find(x => x.name === personPart && x.id !== currentId) : null;
+        if (types.includes(typePart) && (!personPart || person)) {
+            selType = typePart;
+            if (person) selPersonId = String(person.id);
+        } else {
+            selType = '__custom__'; customVal = rel;   // לא ניתן לפירוק → טקסט חופשי
+        }
+    }
+
+    typeSel.innerHTML = '<option value="">— ללא (יחושב אוטומטית) —</option>'
+        + types.map(t => `<option value="${escapeAttr(t)}">${escapeHtml(t)}</option>`).join('')
+        + '<option value="__custom__">➕ סוג קשר אחר…</option>';
+    typeSel.value = selType;
+
+    const people = all.filter(x => x.id !== currentId && (x.type || 'birthday') !== 'anniversary');
+    personSel.innerHTML = '<option value="">— של מי? (לא חובה) —</option>'
+        + people.map(p => `<option value="${p.id}">${escapeHtml((p.emoji ? p.emoji + ' ' : '') + p.name)}</option>`).join('');
+    personSel.value = selPersonId;
+
+    if (customInp) {
+        customInp.value = customVal;
+        customInp.classList.toggle('hidden', selType !== '__custom__');
+    }
+    composeRelation();
+}
+
+export function onRelTypeChange() {
+    const typeSel   = document.getElementById('birthday-edit-rel-type');
+    const customInp = document.getElementById('birthday-edit-rel-custom');
+    if (typeSel && customInp) {
+        const isCustom = typeSel.value === '__custom__';
+        customInp.classList.toggle('hidden', !isCustom);
+        if (isCustom) customInp.focus();
+    }
+    composeRelation();
+}
+
+export function composeRelation() {
+    const typeSel   = document.getElementById('birthday-edit-rel-type');
+    const personSel = document.getElementById('birthday-edit-rel-person');
+    const customInp = document.getElementById('birthday-edit-rel-custom');
+    const hidden    = document.getElementById('birthday-edit-relation');
+    const prev      = document.getElementById('birthday-edit-rel-preview');
+    if (!typeSel || !hidden) return;
+
+    let type = typeSel.value;
+    if (type === '__custom__') type = customInp ? customInp.value.trim() : '';
+
+    let rel = '';
+    if (type) {
+        rel = type;
+        const pid = personSel ? personSel.value : '';
+        if (pid) {
+            const p = (gameState.birthdays || []).find(x => String(x.id) === pid);
+            if (p) rel = `${type} של ${p.name}`;
+        }
+    }
+    hidden.value = rel;
+    if (prev) prev.textContent = rel ? `👪 ${rel}` : 'יחושב אוטומטית מהמיקום בעץ';
+}
+
 // ---------- העורך ----------
 export function openBirthdayEditor(id) {
     const b = (id !== null && id !== undefined) ? (gameState.birthdays || []).find(x => x.id === id) : null;
@@ -563,7 +653,7 @@ export function openBirthdayEditor(id) {
     };
     document.getElementById("birthday-edit-id").value   = b ? b.id : "";
     document.getElementById("birthday-edit-name").value = b ? b.name : "";
-    document.getElementById("birthday-edit-relation").value = (b && b.relation) ? b.relation : "";
+    _renderRelationPicker((b && b.relation) ? b.relation : "", b ? b.id : null);
     document.getElementById("birthday-edit-day").value  = (b && Number.isInteger(b.day)) ? b.day : "";
     document.getElementById("birthday-edit-year").value = (b && Number.isInteger(b.year)) ? b.year : "";
 
@@ -631,6 +721,17 @@ export function saveBirthdayEditor() {
     const idRaw  = document.getElementById("birthday-edit-id").value;
     const name   = document.getElementById("birthday-edit-name").value.trim();
     const relation = document.getElementById("birthday-edit-relation").value.trim();
+
+    // אם הוקלד "סוג קשר אחר" חדש — נוסיף אותו לרשימה כדי שיופיע בפעם הבאה
+    const relTypeSel = document.getElementById("birthday-edit-rel-type");
+    const relCustom  = document.getElementById("birthday-edit-rel-custom");
+    if (relTypeSel && relTypeSel.value === '__custom__' && relCustom) {
+        const newType = relCustom.value.trim();
+        if (newType && !newType.includes(' של ') && !getRelationTypes().includes(newType)) {
+            if (!Array.isArray(gameState.relationTypesCustom)) gameState.relationTypesCustom = [];
+            gameState.relationTypesCustom.push(newType);
+        }
+    }
     const day    = parseInt(document.getElementById("birthday-edit-day").value, 10);
     const month  = parseInt(document.getElementById("birthday-edit-month").value, 10);
     const yearRaw = document.getElementById("birthday-edit-year").value.trim();

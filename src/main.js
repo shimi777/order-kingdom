@@ -59,6 +59,8 @@ Object.assign(window, {
     pickBirthdayAvatar: birthdays.pickBirthdayAvatar,
     pickBirthdayPhoto: birthdays.pickBirthdayPhoto,
     setBirthdayType: birthdays.setBirthdayType,
+    onRelTypeChange: birthdays.onRelTypeChange,
+    composeRelation: birthdays.composeRelation,
     setBirthdayView: birthdays.setBirthdayView,
     importBirthdaysFromCSV: birthdays.importBirthdaysFromCSV,
     // state.js
