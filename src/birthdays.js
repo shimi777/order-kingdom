@@ -384,7 +384,7 @@ function _familyTreeSVG() {
             const lx = u.cx - (BW + CG) / 2, rx = u.cx + (BW + CG) / 2;
             boxes += node(u.primary, lx, yG2, BW, BH, 12, false) + node(u.satId, rx, yG2, BW, BH, 12, false);
             d += `<line x1="${lx + BW / 2}" y1="${yG2 + BH / 2}" x2="${rx - BW / 2}" y2="${yG2 + BH / 2}" stroke="#B4B2A9" stroke-width="1.4" stroke-dasharray="3 3"/>`;
-            if (u.satRel) d += txt(u.cx, yG2 - 5, u.satRel, 9.5, '#5F5E5A');
+            if (u.satRel) d += txt(u.cx, yG2 - 5, escapeHtml(u.satRel), 9.5, '#5F5E5A');
         } else {
             boxes += node(u.primary, u.cx, yG2, BW, BH, 12, false);
         }
@@ -463,7 +463,7 @@ function _familyTreeSVG() {
         else                        { x1 = tcx;         y1 = tb.y;        x2 = scx; y2 = spot.y + SH; }
         d += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#B4B2A9" stroke-width="1.4" stroke-dasharray="3 3"/>`;
         const rt = relTypeOf(x.relation);
-        if (rt) d += txt((x1 + x2) / 2, (y1 + y2) / 2 - 4, rt, 9, '#5F5E5A');
+        if (rt) d += txt((x1 + x2) / 2, (y1 + y2) / 2 - 4, escapeHtml(rt), 9, '#5F5E5A');
         satBounds.minX = Math.min(satBounds.minX, spot.x);      satBounds.minY = Math.min(satBounds.minY, spot.y);
         satBounds.maxX = Math.max(satBounds.maxX, spot.x + SW); satBounds.maxY = Math.max(satBounds.maxY, spot.y + SH);
     });
