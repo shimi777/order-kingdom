@@ -216,6 +216,17 @@ export const STATIC_ROOM_IMAGES = {
     7: BASE_URL + "room_7.jpg"
 };
 
+// ===== מלאי ביתי (מזון + חומרי ניקוי) — כמות + סף התראה =====
+// כשהכמות יורדת לסף או מתחתיו, הפריט מסומן כ"עומד להיגמר"; כמות 0 = "נגמר".
+export const DEFAULT_INVENTORY = [
+    { id: 'inv-milk',    name: 'חלב',        category: 'food',     qty: 2,  threshold: 1 },
+    { id: 'inv-eggs',    name: 'ביצים',      category: 'food',     qty: 12, threshold: 4 },
+    { id: 'inv-bread',   name: 'לחם',        category: 'food',     qty: 1,  threshold: 1 },
+    { id: 'inv-dish',    name: 'סבון כלים',   category: 'cleaning', qty: 1,  threshold: 1 },
+    { id: 'inv-laundry', name: 'אבקת כביסה',  category: 'cleaning', qty: 1,  threshold: 1 },
+    { id: 'inv-tp',      name: 'נייר טואלט',  category: 'cleaning', qty: 6,  threshold: 2 },
+];
+
 // ===== לו״ז משפחתי =====
 export const DAY_NAMES  = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"];
 export const HEB_MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"];

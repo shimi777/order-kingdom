@@ -16,6 +16,7 @@ import * as sync from './sync.js';
 import * as rooms from './rooms.js';
 import * as cloud from './cloud.js';
 import * as birthdays from './birthdays.js';
+import * as inventory from './inventory.js';
 import { renderDailySaying } from './daily-saying.js';
 import { renderReminder, enableReminders } from './reminders.js';
 
@@ -101,6 +102,12 @@ Object.assign(window, {
     toggleShoppingItem: schedule.toggleShoppingItem,
     deleteShoppingItem: schedule.deleteShoppingItem,
     clearBoughtItems: schedule.clearBoughtItems,
+    // inventory.js
+    addInventoryItem: inventory.addInventoryItem,
+    changeInventoryQty: inventory.changeInventoryQty,
+    setInventoryThreshold: inventory.setInventoryThreshold,
+    deleteInventoryItem: inventory.deleteInventoryItem,
+    addInventoryToShopping: inventory.addInventoryToShopping,
 });
 
 // charEditStaging must exist on window before any character-editor render runs;
@@ -139,6 +146,7 @@ function applyRemoteState(remoteState) {
     schedule.renderSchedule();
     schedule.renderMonth();
     schedule.renderShoppingList();
+    inventory.renderInventory();
     renderReminder();
 }
 

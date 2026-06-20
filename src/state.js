@@ -5,7 +5,7 @@
 // ===================================================================
 
 import {
-    INITIAL_STATE, DEFAULT_REWARDS_100, DEFAULT_PRIZE_OPTIONS, DEFAULT_DINNER_OPTIONS, DEFAULT_BIRTHDAYS,
+    INITIAL_STATE, DEFAULT_REWARDS_100, DEFAULT_PRIZE_OPTIONS, DEFAULT_DINNER_OPTIONS, DEFAULT_BIRTHDAYS, DEFAULT_INVENTORY,
     DAILY_TASK_IDS, DAY_MS, WEEK_MS, PERSONAL_ROOMS, EDITABLE_CHARS, ROTATION_CHARS, config
 } from './constants.js';
 // Runtime-only cross-module calls (safe cycles): render + sync.
@@ -125,6 +125,8 @@ export function ensureGameDefaults() {
     if (!gameState.datedEvents)  gameState.datedEvents  = {};
     // ===== תפריט ארוחות ערב =====
     if (!gameState.dinnerOptions) gameState.dinnerOptions = DEFAULT_DINNER_OPTIONS.slice();
+    // ===== מלאי ביתי (מזון + חומרי ניקוי) =====
+    if (!gameState.inventory) gameState.inventory = JSON.parse(JSON.stringify(DEFAULT_INVENTORY));
     // ===== ימי הולדת =====
     if (!gameState.birthdays) gameState.birthdays = JSON.parse(JSON.stringify(DEFAULT_BIRTHDAYS));
     // טעינה חד-פעמית של בני המשפחה המורחבים: משלימה אנשים חסרים וממלאת תאריכים שטרם הוזנו,
