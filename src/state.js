@@ -104,6 +104,9 @@ export function ingestRemoteState(obj) {
 }
 
 export function ensureGameDefaults() {
+    // ===== העדפות הורים =====
+    if (!gameState.settings) gameState.settings = {};
+    if (!gameState.settings.freshnessMode) gameState.settings.freshnessMode = 'grace';
     if (!gameState.rewards100)   gameState.rewards100   = JSON.parse(JSON.stringify(DEFAULT_REWARDS_100));
     if (!gameState.prizeOptions) gameState.prizeOptions = JSON.parse(JSON.stringify(DEFAULT_PRIZE_OPTIONS));
     // ===== לו״ז שבועי =====
@@ -175,6 +178,7 @@ export function resetToInitial() {
     const keepDinnerOpts = gameState.dinnerOptions;   // תפריט ארוחות הערב שורד איפוס
     const keepOverrides = gameState.characterOverrides; // אווטארים/שמות שורדים איפוס
     const keepBirthdays = gameState.birthdays;         // ימי הולדת שורדים איפוס
+    const keepSettings  = gameState.settings;          // העדפות הורים שורדות איפוס
     gameState = JSON.parse(JSON.stringify(INITIAL_STATE));
     if (keepRooms) {
         gameState.rooms = keepRooms;
@@ -188,6 +192,7 @@ export function resetToInitial() {
     if (keepDinnerOpts) gameState.dinnerOptions    = keepDinnerOpts;
     if (keepOverrides) gameState.characterOverrides = keepOverrides;
     if (keepBirthdays) gameState.birthdays         = keepBirthdays;
+    if (keepSettings)  gameState.settings          = keepSettings;
     ensureGameDefaults();
 }
 
@@ -294,15 +299,34 @@ export function calculateAllScores() {
     });
 }
 
+// חלק התקופה (מהסוף) שבו הטריות דועכת במצב "תקופת חסד".
+// 0.25 = המשימה נשארת 100% טרייה לאורך 75% מהזמן, ודועכת רק ב-25% האחרונים.
+const FRESHNESS_GRACE_TAIL = 0.25;
+
+// מקדם טריות של משימה שבוצעה (0..1) לפי מצב הדעיכה שההורים בחרו:
+//   'full'    — נשארת 100% עד שפגה (אז 0)
+//   'grace'   — נשארת 100% רוב התקופה, דועכת רק בזנב (ברירת המחדל)
+//   'instant' — דעיכה רציפה מרגע הביצוע (ההתנהגות ההיסטורית)
+function taskFreshFactor(elapsed, period, mode) {
+    if (elapsed >= period) return 0;
+    if (mode === 'full')    return 1;
+    if (mode === 'instant') return Math.max(0, 1 - elapsed / period);
+    // 'grace' (ברירת מחדל)
+    const tailStart = period * (1 - FRESHNESS_GRACE_TAIL);
+    if (elapsed <= tailStart) return 1;
+    return Math.max(0, 1 - (elapsed - tailStart) / (period * FRESHNESS_GRACE_TAIL));
+}
+
 export function getRoomFreshnessPct(room) {
     if (!room.tasks || room.tasks.length === 0) return 0;
     const now = Date.now();
+    const mode = (gameState.settings && gameState.settings.freshnessMode) || 'grace';
     let totalW = 0, freshW = 0;
     room.tasks.filter(t => !t.hidden).forEach(t => {
         const period = isDaily(t) ? DAY_MS : WEEK_MS;
         let f = 0;
         if (t.completed) {
-            f = t.completedAt ? Math.max(0, 1 - (now - t.completedAt) / period) : 1;
+            f = t.completedAt ? taskFreshFactor(now - t.completedAt, period, mode) : 1;
         }
         freshW += f * t.points;
         totalW += t.points;

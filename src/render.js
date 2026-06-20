@@ -193,11 +193,13 @@ export function updateEditButtons() {
         btn.innerText = "✅ סיום עריכה";
         if (pwBtn) pwBtn.classList.remove("hidden");
         const cb = document.getElementById("global-edit-chars-btn"); if (cb) cb.classList.remove("hidden");
+        const sb = document.getElementById("global-edit-settings-btn"); if (sb) sb.classList.remove("hidden");
     } else {
         btn.className = "py-1.5 px-3 bg-white/80 hover:bg-white text-slate-600 border border-slate-200 rounded-xl text-xs font-bold shadow-sm";
         btn.innerText = "✏️ מצב עריכה (הורים)";
         if (pwBtn) pwBtn.classList.add("hidden");
         const cb = document.getElementById("global-edit-chars-btn"); if (cb) cb.classList.add("hidden");
+        const sb = document.getElementById("global-edit-settings-btn"); if (sb) sb.classList.add("hidden");
     }
 }
 
