@@ -222,6 +222,11 @@ export function getWeekAvg(roomId) {
     return Math.round(recent.reduce((sum, s) => sum + s.pct, 0) / recent.length);
 }
 
+// חלק התקופה שאחריו הסימון "בוצע" מתבטל אוטומטית — וגם חלון דעיכת הנקודות האישיות,
+// כדי שהנקודות יגיעו ל-0 בדיוק כשהסימון מתאפס (ללא "קפיצה"). 0.5 = חצי מהזמן עד האיפוס:
+// משימה יומית מתאפסת אחרי 12 שעות, שבועית אחרי 3.5 ימים.
+const COMPLETION_RESET_FRACTION = 0.5;
+
 export function decayTasks() {
     const now = Date.now();
     let changed = false;
@@ -229,7 +234,7 @@ export function decayTasks() {
         r.tasks.forEach(t => {
             if (!t.completedAt) t.completedAt = null; // ensure field exists
             if (t.completed && t.completedAt) {
-                const limit = isDaily(t) ? DAY_MS : WEEK_MS;
+                const limit = (isDaily(t) ? DAY_MS : WEEK_MS) * COMPLETION_RESET_FRACTION;
                 if (now - t.completedAt > limit) {
                     t.completed = false;
                     t.completedAt = null;
@@ -264,12 +269,22 @@ export function saveScriptUrl() {
 export function calculateAllScores() {
     Object.keys(gameState.personalScores).forEach(k => gameState.personalScores[k] = 0);
     let familyScore = 0;
+    const now = Date.now();
 
     gameState.rooms.forEach(room => {
         room.tasks.forEach(task => {
             if (task.completed && !task.hidden) {
                 if (task.isFamily) familyScore += task.points;
-                else { const ch = effectiveChar(task); if (gameState.personalScores[ch] !== undefined) gameState.personalScores[ch] += task.points; }
+                else {
+                    const ch = effectiveChar(task);
+                    if (gameState.personalScores[ch] !== undefined) {
+                        // נקודות אישיות דועכות ל-0 בדיוק כשהסימון מתאפס: לאורך חצי מהתדירות
+                        // (משימה יומית — תוך 12 שעות, שבועית — תוך 3.5 ימים). ללא "קפיצה" בסוף.
+                        const period = (isDaily(task) ? DAY_MS : WEEK_MS) * COMPLETION_RESET_FRACTION;
+                        const factor = task.completedAt ? personalPointFactor(now - task.completedAt, period) : 1;
+                        gameState.personalScores[ch] += task.points * factor;
+                    }
+                }
             }
         });
     });
@@ -283,6 +298,8 @@ export function calculateAllScores() {
             if (gameState.personalScores[char] !== undefined) gameState.personalScores[char] += pts;
         });
     }
+    // עיגול הניקוד האישי לאחר הדעיכה (כדי שיוצג כמספר שלם)
+    Object.keys(gameState.personalScores).forEach(k => gameState.personalScores[k] = Math.round(gameState.personalScores[k]));
 
     // רישום זכאות לבונוס שישי (ללא נקודות אוטומטיות — הזוכה בוחר בשישי)
     const currentWeek = Math.floor(Date.now() / WEEK_MS);
@@ -297,6 +314,13 @@ export function calculateAllScores() {
             gameState.weeklyBonusLog[roomId] = { week: currentWeek, avg, prize: null };
         }
     });
+}
+
+// דעיכת נקודות אישיות: מקדם ליניארי (0..1) לפי הזמן שחלף מאז הביצוע ביחס לחלון שהועבר.
+// 1 ברגע הביצוע, יורד ליניארית ל-0 בתום החלון (period).
+function personalPointFactor(elapsed, period) {
+    // Math.min(1, …) מגן מפני הפרשי שעון בין מכשירים (completedAt עתידי → elapsed שלילי → מקדם > 1)
+    return Math.min(1, Math.max(0, 1 - elapsed / period));
 }
 
 // חלק התקופה (מהסוף) שבו הטריות דועכת במצב "תקופת חסד".
@@ -323,7 +347,9 @@ export function getRoomFreshnessPct(room) {
     const mode = (gameState.settings && gameState.settings.freshnessMode) || 'grace';
     let totalW = 0, freshW = 0;
     room.tasks.filter(t => !t.hidden).forEach(t => {
-        const period = isDaily(t) ? DAY_MS : WEEK_MS;
+        // חלון הטריות זהה לחלון חיי הסימון (חצי מהתדירות), כדי שהטריות תדעך ל-0
+        // בדיוק כשהסימון מתאפס — וכך מצבי הטריות (full/grace/instant) נשארים משמעותיים.
+        const period = (isDaily(t) ? DAY_MS : WEEK_MS) * COMPLETION_RESET_FRACTION;
         let f = 0;
         if (t.completed) {
             f = t.completedAt ? taskFreshFactor(now - t.completedAt, period, mode) : 1;

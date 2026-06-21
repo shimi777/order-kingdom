@@ -254,7 +254,7 @@ function _cardHTML(b) {
 
     const avatar = b.photo
         ? `<img src="${escapeAttr(b.photo)}" class="w-16 h-20 rounded-xl object-cover border-2 border-white shadow-sm shrink-0" alt="${escapeAttr(b.name)}">`
-        : `<div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-amber-100 to-pink-100 border-2 border-white shadow-sm shrink-0">${b.emoji || info.emoji}</div>`;
+        : `<div class="w-14 h-14 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-amber-100 to-pink-100 border-2 border-white shadow-sm shrink-0">${escapeHtml(b.emoji || info.emoji)}</div>`;
 
     let dateLine, countLine;
     if (hasDate(b)) {
@@ -787,10 +787,10 @@ function _renderBirthdayPreview() {
     const st = window.birthdayEditStaging;
     if (st.photo) {
         prev.innerHTML = `
-            <img src="${st.photo}" class="w-16 h-16 rounded-full object-cover border-2 border-amber-300 shadow-sm">
-            <button type="button" onclick="pickBirthdayAvatar('${st.emoji || "🎂"}')" class="block mx-auto mt-1 text-[10px] text-rose-500 font-bold hover:underline">הסר תמונה</button>`;
+            <img src="${escapeAttr(st.photo)}" class="w-16 h-16 rounded-full object-cover border-2 border-amber-300 shadow-sm">
+            <button type="button" onclick="pickBirthdayAvatar(birthdayEditStaging.emoji || '🎂')" class="block mx-auto mt-1 text-[10px] text-rose-500 font-bold hover:underline">הסר תמונה</button>`;
     } else {
-        prev.innerHTML = `<div class="w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-amber-100 to-pink-100 border-2 border-white shadow-sm">${st.emoji || "🎂"}</div>`;
+        prev.innerHTML = `<div class="w-16 h-16 rounded-full flex items-center justify-center text-3xl bg-gradient-to-br from-amber-100 to-pink-100 border-2 border-white shadow-sm">${escapeHtml(st.emoji || "🎂")}</div>`;
     }
 }
 
