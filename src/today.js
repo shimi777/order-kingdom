@@ -24,7 +24,7 @@ function chip({ emoji, label, sub, cls, onclick }) {
     const clickAttrs = onclick ? ` onclick="${onclick}" role="button" tabindex="0"` : '';
     const clickCls = onclick ? ' cursor-pointer hover:shadow-sm active:scale-[0.98]' : '';
     return `<div class="flex items-center gap-2 px-3 py-2 rounded-2xl border ${cls}${clickCls} transition-all"${clickAttrs}>
-        <span class="text-xl leading-none shrink-0">${emoji}</span>
+        <span class="text-xl leading-none shrink-0">${escapeHtml(emoji)}</span>
         <div class="leading-tight text-right min-w-0">
             <div class="text-[11px] font-extrabold text-slate-700 truncate">${label}</div>
             ${sub ? `<div class="text-[10px] text-slate-500 font-bold truncate">${sub}</div>` : ''}
@@ -91,38 +91,44 @@ function mealChips(dayIdx) {
 export function renderToday() {
     const el = document.getElementById('today-strip');
     if (!el) return;
+    // renderToday רץ ראשון ב-renderAll ומושך נתונים משלוש מערכות (אירועים/מלאי/לו״ז);
+    // עוטפים ב-try כדי שתקלה כאן לא תפיל את שאר הרינדור — במקרה כזה הרצועה פשוט תתרוקן.
+    try {
+        const now = new Date();
+        const dayIdx = now.getDay();
+        const chips = [];
 
-    const now = new Date();
-    const dayIdx = now.getDay();
-    const chips = [];
+        // --- אירועים: כל מי שהיום (עד 2) + האירוע הקרוב הבא בתוך החלון ---
+        const evs = (gameState.birthdays || [])
+            .filter(hasDate)
+            .map(b => ({ b, d: daysUntilNext(b.day, b.month) }))
+            .sort((a, z) => a.d - z.d);
+        const todays = evs.filter(e => e.d === 0).slice(0, 2);
+        const upcoming = evs.find(e => e.d > 0 && e.d <= UPCOMING_WINDOW_DAYS);
+        [...todays, ...(upcoming ? [upcoming] : [])].forEach(e => chips.push(eventChip(e.b, e.d)));
 
-    // --- אירועים: כל מי שהיום (עד 2) + האירוע הקרוב הבא בתוך החלון ---
-    const evs = (gameState.birthdays || [])
-        .filter(hasDate)
-        .map(b => ({ b, d: daysUntilNext(b.day, b.month) }))
-        .sort((a, z) => a.d - z.d);
-    const todays = evs.filter(e => e.d === 0).slice(0, 2);
-    const upcoming = evs.find(e => e.d > 0 && e.d <= UPCOMING_WINDOW_DAYS);
-    [...todays, ...(upcoming ? [upcoming] : [])].forEach(e => chips.push(eventChip(e.b, e.d)));
+        // --- מלאי שעומד להיגמר ---
+        const stock = lowStockChip();
+        if (stock) chips.push(stock);
 
-    // --- מלאי שעומד להיגמר ---
-    const stock = lowStockChip();
-    if (stock) chips.push(stock);
+        // --- ארוחות היום ---
+        chips.push(...mealChips(dayIdx));
 
-    // --- ארוחות היום ---
-    chips.push(...mealChips(dayIdx));
+        // אין מה להציג — משאירים את הרצועה ריקה (ללא כרטיס)
+        if (chips.length === 0) { el.innerHTML = ''; return; }
 
-    // אין מה להציג — משאירים את הרצועה ריקה (ללא כרטיס)
-    if (chips.length === 0) { el.innerHTML = ''; return; }
-
-    const dateLabel = `יום ${DAY_NAMES[dayIdx]}, ${now.getDate()} ב${HEB_MONTHS[now.getMonth()]}`;
-    el.innerHTML = `
-        <div class="watercolor-card p-4 border-amber-200/50 bg-gradient-to-br from-white/80 to-amber-50/30">
-            <div class="flex items-center gap-2 mb-3">
-                <span class="text-lg">📅</span>
-                <h3 class="text-sm font-bold text-slate-800">מבט יומי</h3>
-                <span class="text-[11px] text-slate-400 font-bold">· ${dateLabel}</span>
-            </div>
-            <div class="flex flex-wrap gap-2">${chips.join('')}</div>
-        </div>`;
+        const dateLabel = `יום ${DAY_NAMES[dayIdx]}, ${now.getDate()} ב${HEB_MONTHS[now.getMonth()]}`;
+        el.innerHTML = `
+            <div class="watercolor-card p-4 border-amber-200/50 bg-gradient-to-br from-white/80 to-amber-50/30">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-lg">📅</span>
+                    <h3 class="text-sm font-bold text-slate-800">מבט יומי</h3>
+                    <span class="text-[11px] text-slate-400 font-bold">· ${dateLabel}</span>
+                </div>
+                <div class="flex flex-wrap gap-2">${chips.join('')}</div>
+            </div>`;
+    } catch (e) {
+        console.warn('renderToday failed', e);
+        el.innerHTML = '';
+    }
 }
